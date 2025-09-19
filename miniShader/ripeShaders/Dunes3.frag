@@ -7,7 +7,7 @@ out vec4 fragColor;
 
 uniform float u_time;
 
-const float TRACK_LENGTH = 10.0;  // fixed track length in seconds
+const float TRACK_LENGTH = 60.0;  // fixed track length in seconds
 
 // === Plasma noise functions ===
 float wave(vec2 p) {
@@ -49,7 +49,8 @@ float growT = clamp((u_time - startTime) / TRACK_LENGTH, 0.0, 1.0);
 float growthFactor = mix(0.1, 2.0, growT);
 
 // --- Pulsing (breathing every 8s) ---
-float pulse = 1.0 + 1.5 * sin(u_time * 6.28318 / 8.0);
+float pulseAmount = 1.5 * (u_time / TRACK_LENGTH); // increase over time
+float pulse = 1.0 + pulseAmount * sin(u_time * 6.28318 / 8.0);
 
 // scale uv: smaller growthFactor → smaller object
 vec2 uv = (vPos.xy / 6.0) / growthFactor * pulse ; // removing pulse for now. / pulse;
