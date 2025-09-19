@@ -4,5 +4,14 @@ build
 bin
 **/bin
 
-debug/
+# Ignore AlloLib and al_ext (they're provided externally)
+allolib/
+al_ext/
+
+# Ignore shell init/debug scripts from kickstart
+init.sh
+debug.sh
+
+# OS and editor files
 .DS_Store
+*.swp

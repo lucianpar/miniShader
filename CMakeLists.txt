@@ -14,7 +14,8 @@ if(MSVC)
 endif()
 
 # add source files to executable
-add_executable(${APP_NAME} src/ShaderTesting.cpp)
+add_executable(${APP_NAME} shader-env/src/ShaderTesting.cpp)
+#add_executable(${APP_NAME} shader-env/src/MetaShader-V1.cpp)
 
 # add allolib to project & link
 add_subdirectory(allolib)

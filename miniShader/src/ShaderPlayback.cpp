@@ -19,7 +19,7 @@
 #include <ostream>
 #include <string>
 
-#include "shaderUtility/shaderToSphere.hpp"
+#include "shader-env/shaderUtility/shaderToSphere.hpp"
 
 struct Common {};
 class MyApp : public al::DistributedAppWithState<Common> {
@@ -32,13 +32,14 @@ public:
   std::string fragPath;
   al::Parameter globalTime{"globalTime", "", 0.0, 0.0, 300.0};
 
-  al::ParameterBool running{"running", "0", false};
+  al::ParameterBool running{"running", "0", true};
 
   void onInit() override {
     // gam::sampleRate(audioIO().framesPerSecond());
 
-    searchPaths.addSearchPath(al::File::currentPath() +
-                              "/../shaders/"); // replace with relative folder
+    searchPaths.addSearchPath(
+        al::File::currentPath() +
+        "/../miniShader/ripeShaders/"); // replace with relative folder
 
     al::FilePath vertPathSource = searchPaths.find("standard.vert");
     if (vertPathSource.valid()) {
@@ -47,7 +48,7 @@ public:
     } else {
       std::cout << "couldnt find vert scene 5 in path" << std::endl;
     }
-    al::FilePath fragPathSource = searchPaths.find("CrushedMain.frag");
+    al::FilePath fragPathSource = searchPaths.find("Drift1.frag");
     if (fragPathSource.valid()) {
       fragPath = fragPathSource.filepath();
       std::cout << "Found file at: " << fragPath << std::endl;
@@ -63,8 +64,10 @@ public:
   }
 
   void onAnimate(double dt) override {
-    globalTime = globalTime + dt;
-    std::cout << globalTime << std::endl;
+    if (running == true) {
+      globalTime = globalTime + dt;
+      std::cout << globalTime << std::endl;
+    }
   }
 
   void onDraw(al::Graphics &g) override {
@@ -75,6 +78,20 @@ public:
     shadedSphere.setUniformFloat("u_time", globalTime);
     shadedSphere.draw(g);
   };
+
+  bool onKeyDown(const al::Keyboard &k) override {
+
+    if (isPrimary()) {
+
+      if (k.key() == ' ' && running == false) {
+        running = true;
+        std::cout << "started running" << std::endl;
+      } else if (k.key() == ' ' && running == true) {
+        running = false;
+        std::cout << "stopped running" << std::endl;
+      }
+    }
+  }
 };
 int main() {
   MyApp app;
