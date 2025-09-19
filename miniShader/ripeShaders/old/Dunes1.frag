@@ -39,7 +39,11 @@ vec3 Solar_Plasma(vec2 p) {
 }
 
 void main() {
-    vec2 uv = vPos.xy / 5.0; // scale down to see more
+    // --- Pulsing scale factor (10s cycle) ---
+    float pulse = 1.0 + 0.1 * sin(u_time * 6.28318 / 10.0);
+    // -> ranges from 0.9 to 1.1
+
+    vec2 uv = (vPos.xy / 3.5) / pulse; // scale down + pulse
     float r = length(uv);
 
     // === Sun body ===
@@ -52,12 +56,12 @@ void main() {
     float glow = exp(-3.0 * max(r - 0.5, 0.0));
     vec3 halo = vec3(1.0, 0.7, 0.3) * glow;
     vec3 halo2 = vec3(1.0, 0.3, 0.7) * body * halo * 0.001;
-    vec3 halo3 = vec3(0.3, 0.3, 0.7) * body /plasma ;
+    vec3 halo3 = vec3(0.3, 0.3, 0.7) * body / plasma;
 
     // === Subtle tendrils only near edge ===
     float m1 = wave(uv * 4.0 + u_time * 0.2);
     float m2 = wave2(uv * 3.5 - u_time * 0.15);
-    float edgeRegion = smoothstep(0.45, 0.55, r); // only near surface
+    float edgeRegion = smoothstep(0.45, 0.55, r);
     float tendrilMask = (m1 - m2) * edgeRegion * 0.3; 
     vec3 tendrils = vec3(1.0, 0.6, 0.2) * tendrilMask * plasma;
 

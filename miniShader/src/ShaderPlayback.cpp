@@ -48,7 +48,7 @@ public:
     } else {
       std::cout << "couldnt find vert scene 5 in path" << std::endl;
     }
-    al::FilePath fragPathSource = searchPaths.find("Dunes1.frag");
+    al::FilePath fragPathSource = searchPaths.find("Dunes3.frag");
     if (fragPathSource.valid()) {
       fragPath = fragPathSource.filepath();
       std::cout << "Found file at: " << fragPath << std::endl;
