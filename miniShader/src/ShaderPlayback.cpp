@@ -30,6 +30,7 @@ public:
 
   std::string vertPath;
   std::string fragPath;
+  std::string fragName = "Dunes3.frag";
   al::Parameter globalTime{"globalTime", "", 0.0, 0.0, 300.0};
 
   al::ParameterBool running{"running", "0", true};
@@ -48,7 +49,7 @@ public:
     } else {
       std::cout << "couldnt find vert scene 5 in path" << std::endl;
     }
-    al::FilePath fragPathSource = searchPaths.find("scat3.frag");
+    al::FilePath fragPathSource = searchPaths.find(fragName);
     if (fragPathSource.valid()) {
       fragPath = fragPathSource.filepath();
       std::cout << "Found file at: " << fragPath << std::endl;
