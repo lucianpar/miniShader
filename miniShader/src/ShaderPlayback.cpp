@@ -31,7 +31,7 @@ public:
 
   std::string vertPath;
   std::string fragPath;
-  std::string fragName = "MistA5.frag";
+  std::string fragName = "MistC2.frag";
   al::Parameter globalTime{"globalTime", "", 0.0, 0.0, 300.0};
 
   al::ParameterBool running{"running", "0", true};
