@@ -119,20 +119,21 @@ vec4 shaderSmoke2(vec2 uv, float t) {
     return vec4(color * total, alpha);
 }
 
-// === SMOKE 3 (Refined for one large cloud forming inward from outside the frame, using fbm instead of gyroid) ===
+// === SMOKE 3 (Hybrid version: in between MistA1 and MistA2, with larger, clearer mist kernels) ===
 vec4 shaderSmoke3(vec2 uv, float t) {
     // Scale for a large cloud
     uv *= 0.1;  // Larger scale for one big cloud
 
-    // Use fbm for tiny structures, evolving over time
-    float mist = fbm(vec3(uv * 8.0, t * 0.005));  // Evolving with time
+    // Use fbm for base structure, with larger scale for bigger kernels
+    float mist = fbm(vec3(uv * 6.0, t * 0.005));  // Compromise scale between 4.0 and 8.0
 
-    // Modulate with darker areas
-    mist = abs(mist) * 0.5;  // Emphasize darker areas
+    // Create clearer, softer kernels by thresholding, but blend with original mist
+    float kernel = smoothstep(0.3, 0.7, mist);  // Adjusted thresholds for balance
+    mist = mix(mist, kernel, 0.6);  // Blend original and kernel for hybrid effect
 
-    // Add more visible grain to create texture
-    float grain = grainNoise(uv * 200.0, t);  // Higher frequency for finer grains
-    mist = mix(mist, grain, 0.5);  // Blend to create grainy mist
+    // Add grain for texture, with larger grains
+    float grain = grainNoise(uv * 150.0, t);  // Compromise frequency between 100.0 and 200.0
+    mist = mix(mist, grain, 0.4);  // Reduced blend to make it less noisy
 
     // Mask for forming inward from outside
     float dist = length(uv);

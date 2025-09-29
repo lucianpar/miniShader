@@ -20,17 +20,12 @@ float gyroid(vec3 seed) {
 float fbm(vec3 seed) {
     float result = 0.0;
     float a = 0.5;
-    for (int i = 0; i < 15; ++i) {  // Increased to 15 for even more noise detail
+    for (int i = 0; i < 10; ++i) {  // Further increased iterations for even more detail
         seed.z += result * 0.5;
         result += abs(gyroid(seed / a)) * a;
         a *= 0.5;
     }
     return result;
-}
-
-// Additional grainy noise function for mist-like texture
-float grainNoise(vec2 uv, float t) {
-    return fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453 + t * 0.1);
 }
 
 // === SMOKE 1 (Modified for grey misty effect) ===
@@ -119,32 +114,32 @@ vec4 shaderSmoke2(vec2 uv, float t) {
     return vec4(color * total, alpha);
 }
 
-// === SMOKE 3 (Refined for one large cloud forming inward from outside the frame, using fbm instead of gyroid) ===
+// === SMOKE 3 (Further refined for even more detail, starting from outside and merging into one structure) ===
 vec4 shaderSmoke3(vec2 uv, float t) {
-    // Scale for a large cloud
-    uv *= 0.1;  // Larger scale for one big cloud
+    // Finer scaling for more detail and less shapely forms
+    uv *= 0.3;  // Further increased scaling for finer details and merging
 
-    // Use fbm for tiny structures, evolving over time
-    float mist = fbm(vec3(uv * 8.0, t * 0.005));  // Evolving with time
+    // Reduced and slower drift for less movement
+    uv += 0.05 * vec2(
+        sin(uv.y * 1.5 + t * 0.05),  // Even slower time multiplier
+        cos(uv.x * 1.3 - t * 0.04)  // Even slower time multiplier
+    ) * fbm(vec3(uv * 2.5, t * 0.02));  // Higher frequency for detail, slower time
 
-    // Modulate with darker areas
-    mist = abs(mist) * 0.5;  // Emphasize darker areas
+    // Even higher frequency fbm for more detail
+    float smoke = fbm(vec3(uv * 6.0, t * 0.015)) * 2.0;  // Increased frequency, iterations, and amplitude
 
-    // Add more visible grain to create texture
-    float grain = grainNoise(uv * 200.0, t);  // Higher frequency for finer grains
-    mist = mix(mist, grain, 0.5);  // Blend to create grainy mist
-
-    // Mask for forming inward from outside
+    // Adjusted masking to start from outside and merge towards center
     float dist = length(uv);
-    float formInward = 1.0 - smoothstep(0.0, 1.5 - t * 0.005, dist);  // Starts at edges, forms towards center over time
+    float outerMask = smoothstep(0.0, 1.5, dist);  // Stronger at edges
+    float innerMask = 1.0 - smoothstep(0.0, 0.5, dist);  // Weaker in center
+    float ambientMask = mix(outerMask, innerMask, 0.5);  // Blend for merging effect
 
-    // Intensity with inward formation
-    float intensity = mist * 0.8 * formInward;
+    float intensity = pow(smoke, 1.2) * ambientMask;  // Adjusted power for finer, merging texture
 
-    // Grey misty colors
-    vec3 color = mix(vec3(0.4, 0.4, 0.4), vec3(0.6, 0.6, 0.6), 0.5 + 0.1 * sin(t * 0.005 + mist * 0.5));
+    // Grey misty colors with subtle variations
+    vec3 color = mix(vec3(0.5, 0.5, 0.5), vec3(0.7, 0.7, 0.7), 0.5 + 0.2 * sin(t * 0.03 + smoke * 1.5));  // Slower color variation
 
-    return vec4(color * intensity, 0.1 + 0.5 * intensity);  // Higher alpha for visibility
+    return vec4(color * intensity, 0.03 + 0.5 * intensity);  // Adjusted alpha for finer mist
 }
 
 // === FOAM BUBBLE (Modified for grey misty effect) ===

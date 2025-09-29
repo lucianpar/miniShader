@@ -18,6 +18,7 @@
 #include <iostream>
 #include <ostream>
 #include <string>
+#include <type_traits>
 
 #include "shader-env/shaderUtility/shaderToSphere.hpp"
 
@@ -30,10 +31,12 @@ public:
 
   std::string vertPath;
   std::string fragPath;
-  std::string fragName = "MistA1.frag";
+  std::string fragName = "MistA5.frag";
   al::Parameter globalTime{"globalTime", "", 0.0, 0.0, 300.0};
 
   al::ParameterBool running{"running", "0", true};
+
+  bool printTime = false;
 
   void onInit() override {
     // gam::sampleRate(audioIO().framesPerSecond());
@@ -67,7 +70,9 @@ public:
   void onAnimate(double dt) override {
     if (running == true) {
       globalTime = globalTime + dt;
+      if (printTime) {
       std::cout << globalTime << std::endl;
+      }
     }
   }
 
