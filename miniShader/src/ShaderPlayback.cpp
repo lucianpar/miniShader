@@ -31,7 +31,9 @@ public:
 
   std::string vertPath;
   std::string fragPath;
-  std::string fragName = "MistC2.frag";
+  std::string fragName = "Drift3.frag";
+  std::string mistFolder = "/../miniShader/mistShaders/";
+  std::string ripeFolder = "/../miniShader/ripeShaders/";
   al::Parameter globalTime{"globalTime", "", 0.0, 0.0, 300.0};
 
   al::ParameterBool running{"running", "0", true};
@@ -43,7 +45,7 @@ public:
 
     searchPaths.addSearchPath(
         al::File::currentPath() +
-        "/../miniShader/mistShaders/"); // replace with relative folder
+        ripeFolder); // replace with relative folder
 
     al::FilePath vertPathSource = searchPaths.find("standard.vert");
     if (vertPathSource.valid()) {

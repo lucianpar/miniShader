@@ -1,0 +1,127 @@
+#version 330 core
+
+in vec3 vPos; // receive from vert
+in vec2 vUV;
+
+out vec4 fragColor;
+
+uniform float u_time;
+uniform float onset;
+uniform float flux;
+
+#define TWO_PI 6.283
+
+float D = 0.6;
+
+// Expansion/contraction period (0.83s)
+const float period = 12.8;
+const float osc_speed = TWO_PI / period;
+
+// Animated scale factor for membranes
+float membrane_scale() {
+    // Oscillates between ~1.2 and ~1.8
+    return  1.0+ 0.2 * sin(u_time * osc_speed);
+}
+
+float wave(vec2 p)
+{
+    p *= membrane_scale(); // animated scale up
+    float v = sin(p.x + sin(p.y * 2.0) + sin(p.y * 0.43));
+    v += 0.7 * sin(p.y * 1.5 + u_time * 0.2); // increased amplitude
+    v += 0.5 * cos(p.x * 1.7 - u_time * 0.7); // increased amplitude
+    // Removed mod to make waves continuous and flowing
+    v *= 0.5; // Scale down to keep values reasonable
+    return v;
+}
+
+float wave2(vec2 p)
+{
+    p *= membrane_scale(); // animated scale up
+    // Offset, rotate, and time-warp for a complementary membrane
+    p = mat2(cos(0.7), -sin(0.7), sin(0.7), cos(0.7)) * p;
+    p += vec2(0.7, -0.4);
+    float v = cos(p.y + sin(p.x * 2.1) + sin(p.x * 0.37));
+    v += 0.7 * cos(p.x * 1.3 - u_time * 0.23); // increased amplitude
+    v += 0.5 * sin(p.y * 1.9 + u_time * 0.18); // increased amplitude
+    // Removed mod to make waves continuous and flowing
+    v *= 0.5; // Scale down to keep values reasonable
+    return v;
+}
+
+const mat2 rot = mat2(0.5, 0.86, -0.86, 0.5);
+
+float map(vec2 p)
+{
+    float v = wave(p);
+    p.x += u_time * 0.224;  p *= rot;  v += wave(p);
+    p.x += u_time * 0.333 / (p.y + 1.2);  p *= rot;  v += wave(p) / (p.x + 1.2);
+    return abs(1.5 - v + u_time / 10000.0);
+}
+
+float map2(vec2 p)
+{
+    float v = wave2(p);
+    p.y -= u_time * 0.18;  p *= rot;  v += wave2(p);
+    p.y -= u_time * 0.29 / (p.x + 1.3);  p *= rot;  v += wave2(p) / (p.y + 1.3);
+    return abs(1.5 - v + u_time / 9000.0);
+}
+
+vec3 Oceanic_Membrane(vec2 pos)
+{
+    pos.y += u_time * 0.;
+    float v1 = map(pos);
+    float v2 = map2(pos * 1.1 - 0.5);
+
+    // Original palette
+    vec3 deepBlue = vec3(0.08, 0.18, 0.38);
+    vec3 turquoise = vec3(0.1, 0.7, 0.8);
+    vec3 foam = vec3(0.85, 0.95, 1.0);
+
+    // Second membrane palette (slightly greenish for depth)
+    vec3 kelp = vec3(0.18, 0.5, 0.28);
+
+    // Blend between deep blue and turquoise based on v1, then add foam highlights
+    vec3 c1 = mix(deepBlue, turquoise, smoothstep(0.2, 0.8, v1));
+    c1 = mix(c1, foam, pow(v1, 8.0));
+
+    // Second membrane: greenish highlights, more subtle
+    vec3 c2 = mix(deepBlue, kelp, smoothstep(0.18, 0.7, v2));
+    c2 = mix(c2, foam, pow(v2, 10.0));
+
+    // Lighting for both membranes
+    vec3 n1 = normalize(vec3(v1 - map(vec2(pos.x + D, pos.y)), v1 - map(vec2(pos.x, pos.y + D)), -D));
+    vec3 n2 = normalize(vec3(v2 - map2(vec2(pos.x + D, pos.y)), v2 - map2(vec2(pos.x, pos.y + D)), -D));
+    vec3 l = normalize(vec3(0.1, 0.2, -0.5));
+    float light1 = dot(l, n1) + pow(dot(l, n1), 40.0);
+    float light2 = dot(l, n2) + pow(dot(l, n2), 40.0);
+
+    c1 *= 0.7 + 0.3 * light1;
+    c2 *= 0.5 + 0.5 * light2;
+
+    // Subtle underwater caustics effect
+    float caustics = 0.15 * sin(pos.x * 3.0 + u_time * 0.7) * sin(pos.y * 4.0 - u_time * 0.5);
+    c1 += caustics * vec3(0.2, 0.4, 0.5);
+    c2 += caustics * vec3(0.1, 0.3, 0.2);
+
+    // Invert both, bias toward white to avoid black
+    c1 = 1.0 - c1;
+    c1 = mix(c1, vec3(1.0), 0.08);
+    c2 = 1.0 - c2;
+    c2 = mix(c2, vec3(1.0), 0.12);
+
+    // Blend the two membranes, with c2 "deeper" (darker, more transparent)
+    float blend = smoothstep(0.18, 0.7, v2) * 0.6;
+    vec3 c = mix(c1, c2, blend);
+
+    // Add a little extra white at intersections
+    float intersection = smoothstep(0., 0.0, abs(v1 - v2));
+    c = mix(c, vec3(1.0), intersection * 0.25);
+
+    return c;
+}
+
+void main() {
+    vec3 color = Oceanic_Membrane(vPos.xy);
+    color = color * 0.97 + vec3(0.03, 0.03, 0.03); // keep it bright, no black
+    fragColor = vec4(color, 1.0);
+}
