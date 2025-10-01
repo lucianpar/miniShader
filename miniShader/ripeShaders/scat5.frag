@@ -13,7 +13,7 @@ uniform float u_time;
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
 
 float noise(vec2 p) {
-    vec2 i = floor(p); 
+    vec2 i = floor(p);
     vec2 f = fract(p);
     float a = hash(i);
     float b = hash(i + vec2(1.0,0.0));
@@ -147,7 +147,7 @@ vec3 renderCreature(vec2 uv, vec2 offset, float timeShift, float appearPhase) {
 // ---------------------
 void main() {
     // base uv for the bug-field (higher frequency space)
-    vec2 uv = vPos.xy * 8.0;
+    vec2 uv = vPos.xy * 2.0;
 
     // domain-warp uv to create pockets / mold-like grouping
     // tuned: speed small, amp moderate
@@ -168,25 +168,13 @@ void main() {
     float gy = fbmGyroid(vec3(rot * warpedUV * dynamicScale + flow, u_time*0.02));
     float grouping = smoothstep(0.4, 0.65, gy);
 
-    // --- Region mask: low-frequency pockets (domain-distorted) ---
-    // creates large areas of higher / lower density (mold-spore pockets)
-    float regionLF = fbmGyroid(vec3(warpedUV * 0.005, u_time * 0.01)); // very low freq
-    float regionMask = smoothstep(0.35, 0.7, regionLF); // 0..1 mask for pockets
-
-    // --- Micro density modulation: adds smaller variation inside pockets ---
-    float micro = fbm(vec2(warpedUV * 0.12)); // cheap 2D fbm from earlier
-    float microMask = smoothstep(0.2, 0.8, micro);
-
-    // combine masks: pockets get boosted, sparse areas reduced
-    float densityMask = mix(0.35, 1.25, regionMask) * (0.75 + 0.5 * microMask);
-    grouping *= densityMask;
+    float densityWave = 0.6 + 0.4*fbmGyroid(vec3(0.0,0.0,u_time*0.05));
+    grouping *= densityWave;
 
     float sizePulse = 0.9 + 0.2*sin(u_time * 2.0);
     float bugSize, twinklePhase;
     float bugField = voronoi(warpedUV, bugSize, twinklePhase, sizePulse);
 
-    // adjust local bugSize by region to make bugs larger in dense pockets
-    bugSize *= mix(0.8, 1.4, regionMask);
     float bugs = smoothstep(bugSize, 0.0, bugField);
     float glow = smoothstep(bugSize*1.6, bugSize*1.2, bugField);
     bugs += glow * 0.3;
@@ -196,18 +184,18 @@ void main() {
     bugs *= grouping;
 
     vec3 base   = vec3(0.01, 0.0, 0.05);
-    vec3 accent = vec3(0.12, 0.05, 0.3);
-    vec3 glowC  = vec3(0.3, 0.2, 0.65);
+    vec3 accent = vec3(0.12, 0.05, 0.3) * 1.2; // slightly brighter accent
+    vec3 glowC  = vec3(0.3, 0.2, 0.65) * 3.0; // even brighter purple
 
     vec3 bugColor = mix(base, accent, bugs);
     bugColor = mix(bugColor, glowC, pow(bugs, 2.0));
 
     // === One Creature at a Time ===
-    vec2 uvCreature = vPos.xy;
-    vec3 creatureColor = renderCreature(uvCreature, vec2(0.2, -0.1), 1.7, 0.0);
+    // vec2 uvCreature = vPos.xy;
+    // vec3 creatureColor = renderCreature(uvCreature, vec2(0.2, -0.1), 1.7, 0.0);
 
     // === Combine ===
-    vec3 finalColor = bugColor + creatureColor;
+    vec3 finalColor = bugColor ;//+ creatureColor;
 
-    fragColor = vec4(finalColor, 1.0);
+    fragColor = vec4(finalColor + 0.01, 1.0);
 }
