@@ -1,7 +1,7 @@
 #version 330 core
 
 in vec3 vPos; // receive from vert
-in vec2 vUV;
+
 
 out vec4 fragColor;
 
@@ -64,14 +64,14 @@ vec4 proceduralTexture(vec2 t) {
 }
 
 // Render Swirl (modularized)
-vec4 renderSwirl(float speed, float size) {
+vec4 renderSwirl(float speed, float size, float pzIn) {
     // efficient UV handling: assume vPos in [-1,1], scale and center with size parameter
-    vec2 w = vPos.xy * 400.0 * size + vec2(400.0, 300.0); // scale UV with size
+    vec2 w = vPos.xy * 400 * size; // scale UV with size
     vec4 p = vec4(w, 0, 1) / vec4(600.0, 600.0, 1.0, 1.0) - 0.5;
-    p.x -= 0.4;
     vec4 d = p;
-    p.z += 10.0;
-
+   // p.z += 40.0 - pzIn; // this is letting it spiral out over time
+    //p.z += 10.0;
+    p.z += 20.0 - pzIn; // reduced forward motion for better effect
     vec4 bg = vec4(0, 0, 0, 0);
     vec4 frag = bg;
     float x = 1e9;
@@ -109,6 +109,9 @@ vec4 renderSwirl(float speed, float size) {
     return frag;
 }
 
+float iter = 1.0; // initial value, but will be overridden
+
 void main() {
-    fragColor = renderSwirl(5.0, 1.0); // default speed and size
+    iter = T * 0.5; // increase over time based on u_time
+    fragColor = renderSwirl(5.0, 1.0, iter);
 }
