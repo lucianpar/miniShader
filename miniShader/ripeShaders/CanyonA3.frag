@@ -6,8 +6,10 @@ in vec3 vPos; // receive from vert
 out vec4 fragColor;
 
 uniform float u_time;
-uniform float onset;
-uniform float flux;
+
+
+float swirlSize = 1.0; // initial value, but will be overridden
+
 
 #define T u_time
 #define r(v,t) { float a = (t)*T, c=cos(a),s=sin(a); v*=mat2(c,s,-s,c); }
@@ -109,9 +111,8 @@ vec4 renderSwirl(float speed, float size, float pzIn) {
     return frag;
 }
 
-float iter = 1.0; // initial value, but will be overridden
 
 void main() {
-    iter = T * 0.5; // increase over time based on u_time
-    fragColor = renderSwirl(5.0, 1.0, iter);
+    swirlSize = 1.0 * T; // increase over time based on u_time
+    fragColor = renderSwirl(5.0, 1.0, swirlSize);
 }
