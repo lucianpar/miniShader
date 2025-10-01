@@ -40,6 +40,8 @@ public:
 
   bool printTime = false;
 
+  // set up audio player ***
+
   void onInit() override {
     // gam::sampleRate(audioIO().framesPerSecond());
 

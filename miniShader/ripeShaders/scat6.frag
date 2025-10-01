@@ -205,7 +205,7 @@ void main() {
     float angle = u_time * 0.1; // slow rotation
     mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
     vec2 rotatedUV = rot * uv;
-    vec3 bugColor2 = renderBugSwarm(rotatedUV, vec3(0.0, 2.0, 0.0), 0.08, 0.5, 2.0); // green, less dense, thicker
+    vec3 bugColor2 = renderBugSwarm(rotatedUV, vec3(0.0, 3.0, 1.0), 0.08, 0.5, 1.5); // green, less dense, thicker
 
     // === One Creature at a Time ===
     // vec2 uvCreature = vPos.xy;
