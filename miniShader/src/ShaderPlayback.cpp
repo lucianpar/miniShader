@@ -31,7 +31,7 @@ public:
 
   std::string vertPath;
   std::string fragPath;
-  std::string fragName = "CanyonB1.frag";
+  std::string fragName = "MistC2.frag";
   std::string mistFolder = "/../miniShader/mistShaders/";
   std::string ripeFolder = "/../miniShader/ripeShaders/";
   al::Parameter globalTime{"globalTime", "", 0.0, 0.0, 300.0};
@@ -47,7 +47,7 @@ public:
 
     searchPaths.addSearchPath(
         al::File::currentPath() +
-        ripeFolder); // replace with relative folder
+        mistFolder); // replace with relative folder
 
     al::FilePath vertPathSource = searchPaths.find("standard.vert");
     if (vertPathSource.valid()) {

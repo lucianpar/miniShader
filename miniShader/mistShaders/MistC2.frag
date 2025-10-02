@@ -62,9 +62,16 @@ vec2 cliffordAttractor(vec2 seed, float t){
         z = vec2(nx, ny);
     }
     // normalize into 0..1 space robustly
-    z = z * 0.25;            // shrink
+    z = z * 0.25 * z;            // shrink
     z += vec2(0.5);          // shift
     return fract(z);
+}
+
+// Organic noise-based attractor (more natural than Clifford)
+vec2 organicAttractor(vec2 seed, float t){
+    // base position with fractal noise displacement
+    vec2 disp = vec2(fbm2(seed * 5.0 + t), fbm2(seed * 5.0 + t + 10.0)) * 0.2;
+    return seed + disp;
 }
 
 // main: dense mesh of noisy lines, geometry driven by attractor
@@ -79,7 +86,7 @@ vec4 cloud(vec2 uv, float t){
     vec2 seed = fract(vec2(hash(id), hash(id.yx + 7.3)));
 
     // get attractor-derived point inside the cell
-    vec2 attractPt = cliffordAttractor(seed + cell*0.13, t);
+    vec2 attractPt = organicAttractor(seed + cell*0.13, t);
     // map attractor result to a position inside the cell (0..1)
     vec2 pt = clamp(attractPt, vec2(0.0), vec2(1.0));
 
@@ -95,9 +102,9 @@ vec4 cloud(vec2 uv, float t){
     vec2 seedU = fract(vec2(hash(idU), hash(idU.yx + 5.1)));
     vec2 seedRU= fract(vec2(hash(idRU),hash(idRU.yx + 9.2)));
 
-    vec2 ptR = clamp(cliffordAttractor(seedR + vec2(0.23), t), vec2(0.0), vec2(1.0));
-    vec2 ptU = clamp(cliffordAttractor(seedU + vec2(0.47), t), vec2(0.0), vec2(1.0));
-    vec2 ptRU= clamp(cliffordAttractor(seedRU + vec2(0.71), t), vec2(0.0), vec2(1.0));
+    vec2 ptR = clamp(organicAttractor(seedR + vec2(0.23), t), vec2(0.0), vec2(1.0));
+    vec2 ptU = clamp(organicAttractor(seedU + vec2(0.47), t), vec2(0.0), vec2(1.0));
+    vec2 ptRU= clamp(organicAttractor(seedRU + vec2(0.71), t), vec2(0.0), vec2(1.0));
 
     vec2 worldR = (idR + ptR) / scale - vec2(0.5);
     vec2 worldU = (idU + ptU) / scale - vec2(0.5);
@@ -151,7 +158,7 @@ vec4 cloud(vec2 uv, float t){
 
 void main(){
     // use the fixed coordinate that produced dense mesh previously
-    vec2 uv = vPos.xy / 10.0;
+    vec2 uv = vPos.xy / 20.0;
     float t = u_time;
 
     vec4 outColor = cloud(uv, t);
