@@ -8,7 +8,7 @@ out vec4 fragColor;
 uniform float u_time;
 
 
-float swirlSize = 1.0; // initial value, but will be overridden
+float swirlSize = 20.0; // initial value, but will be overridden
 
 
 #define T u_time
@@ -65,16 +65,14 @@ vec4 proceduralTexture(vec2 t) {
     return vec4(fb, fb, fb, 1.0); // simplified to single fbm
 }
 
-// Render Swirl (modularized)
+// Render Swirl (modularized for mandala plant growth)
 vec4 renderSwirl(float speed, float size, float pzIn) {
     // efficient UV handling: assume vPos in [-1,1], scale and center with size parameter
-    vec2 w = vPos.xy * 400 * size + vec2(400.0, 300.0); // scale UV with size
-    vec4 p = vec4(w, 0, 1) / vec4(600.0, 600.0, 1.0, 1.0) - 0.5;
+    vec2 w = vPos.xy * 400.0 * size + vec2(400.0, 300.0); // add center offset for proper centering
+    vec4 p = vec4(w, 0, 1) / vec4(800.0, 600.0, 1.0, 1.0) - 0.5; // adjust division for 800x600 symmetry
     vec4 d = p;
-   // p.z += 40.0 - pzIn; // this is letting it spiral out over time
-    //p.z += 10.0;
     p.z += 20.0 - pzIn; // reduced forward motion for better effect
-    vec4 bg = vec4(0, 0, 0, 0);
+    vec4 bg = vec4(0.0, 0.0, 1.0, 0.0); // blue background
     vec4 frag = bg;
     float x = 1e9;
 
@@ -86,13 +84,17 @@ vec4 renderSwirl(float speed, float size, float pzIn) {
         r(t.xy, u.x);
         r(t.xz, u.y);
 
-        // simplified displacement: scale with size
+        // simplified displacement: scale with size, add radial for mandala symmetry
+        float angle = atan(t.y, t.x);
+        float radius = length(t.xy);
         vec3 disp = sfbm3(t.xyz / (2.0 * size) + vec3(0.5 * T * speed, 0, 0)) * (0.6 + 8.0 * (0.5 - 0.5 * cos(T * speed / 16.0)));
+        // add mandala radial modulation
+        disp += 0.2 * sin(angle * 8.0 + T * speed) * vec3(cos(angle), sin(angle), 0.0);
         t.xyz += disp;
 
-        // simplified texture: single fbm call
+        // simplified texture: single fbm call, green for plant growth
         float tex = fbm(vec3(t.xy, T * speed));
-        vec4 c = vec4(tex, tex, tex, 1.0) * 5.0;
+        vec4 c = vec4(0.0, tex * 2.0, 0.0, 1.0); // green color for plants
 
         x = abs(mod(length(t.xyz), 1.0) - 0.5);
         float x1 = length(t.xyz) - 7.0;
@@ -113,6 +115,6 @@ vec4 renderSwirl(float speed, float size, float pzIn) {
 
 
 void main() {
-    swirlSize = 1.0 * T; // increase over time based on u_time
-    fragColor = renderSwirl(4.0, 1.0, swirlSize);
+    //swirlSize = 1.0 * T; // increase over time based on u_time for gentle growth
+    fragColor = renderSwirl(2.0, 1.5, swirlSize);
 }
