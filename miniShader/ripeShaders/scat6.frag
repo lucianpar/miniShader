@@ -7,6 +7,8 @@ uniform float u_time;
 
 #define TWO_PI 6.283
 
+float sceneBrightness = 0.0;
+
 // ---------------------
 // Hash & Noise
 // ---------------------
@@ -196,6 +198,7 @@ vec3 renderBugSwarm(vec2 uv, vec3 colorMultiplier, float speed, float density, f
 // ---------------------
 void main() {
     // base uv for the bug-field (higher frequency space)
+    sceneBrightness = float(sin(u_time)); // brightness oscillates between 0 and 1); //change pulsing behaviour timeq
     vec2 uv = vPos.xy * 2.0;
 
     // first swarm: default
@@ -214,5 +217,5 @@ void main() {
     // === Combine ===
     vec3 finalColor = bugColor1 + bugColor2 ;//+ creatureColor;
 
-    fragColor = vec4(finalColor + 0.01, 1.0);
+    fragColor = vec4( sceneBrightness * finalColor + 0.01, 1.0);
 }
