@@ -31,7 +31,7 @@ public:
 
   std::string vertPath;
   std::string fragPath;
-  std::string fragName = "MistC2.frag";
+  std::string fragName = "MistE1.frag";
   std::string mistFolder = "/../miniShader/mistShaders/";
   std::string ripeFolder = "/../miniShader/ripeShaders/";
   al::Parameter globalTime{"globalTime", "", 0.0, 0.0, 300.0};
