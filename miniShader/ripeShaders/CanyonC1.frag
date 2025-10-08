@@ -17,7 +17,7 @@ float D = 0.6;
 float wave(vec2 p)
 {
   float v = sin(p.x + sin(p.y*2.) + sin(p.y * 0.43));
-  return (v * mod(v,p.x) / p.y) * 100.0 / u_time; // * 100 / u_time to unravel over time
+  return (v * mod(v,p.x) / p.y) * 100.0 / (u_time); // * 100 / u_time to unravel over time
 }
 
 const mat2 rot = mat2(0.5, 0.86, -0.86, 0.5);
