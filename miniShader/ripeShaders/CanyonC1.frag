@@ -14,32 +14,32 @@ uniform float u_time;
 
 float D = 0.6;
 
-float wave(vec2 p)
+float wave(vec2 p, float speed)
 {
-  float v = sin(p.x + sin(p.y*2.) + sin(p.y * 0.43));
-  return (v * mod(v,p.x) / p.y) * 100.0 / (u_time); // * 100 / u_time to unravel over time
+  float v = sin(p.x + sin(p.y*2.) + sin(p.y * 0.43)) ;
+  return (v * mod(v,p.x) / p.y) * 100.0 / (u_time * speed); // unravel over time based on speed
 }
 
 const mat2 rot = mat2(0.5, 0.86, -0.86, 0.5);
 
-float map(vec2 p)
+float map(vec2 p, float speed)
 {
-  float v = wave(p);
-  p.x += (u_time+0.01) * 0.224 ;  p *= rot;  v += wave(p);
-  p.x += (u_time+0.01) * 0.333 / p.y;  p *= rot;  v += wave(p) / p.x;
+  float v = wave(p, speed);
+  p.x += (u_time+0.01) * 0.224 ;  p *= rot;  v += wave(p, speed);
+  p.x += (u_time+0.01) * 0.333 / p.y;  p *= rot;  v += wave(p, speed) / p.x;
   return abs(1.5 - v + u_time / 10000);
 }
 
-vec3 Mucous_Membrane(vec2 pos)
+vec3 Mucous_Membrane(vec2 pos, float speed)
 {
   pos.y += (u_time+0.01) * 0.2;
-  float v = map(pos) ;
+  float v = map(pos, speed);
 
   // base: mostly white
   vec3 base = vec3(0.7, 0.9, 0.7); // green ish base 
 
   // streak color (blue-green cyan family), modulated by a lower-frequency map for variation
-  float modf = map(pos * 0.12);
+  float modf = map(pos * 0.12, speed);
   vec3 streakCol = vec3(0.4, 0.6, 1.00) * (0.6 + 0.6 * modf);
 
   // streak mask derived from the main field to keep structure intact
@@ -52,7 +52,7 @@ vec3 Mucous_Membrane(vec2 pos)
   c = mix(c, vec3(0.85, 0.98, 1.0) * (0.85 + 0.15*modf), 0.12);
 
   // compute normal / lighting as before (keeps original shading behavior)
-  vec3 n = normalize(vec3(v - map(vec2(pos.x + D, pos.y)), v - map(vec2(pos.x, pos.y + D)), -D));
+  vec3 n = normalize(vec3(v - map(vec2(pos.x + D, pos.y), speed), v - map(vec2(pos.x, pos.y + D), speed), -D));
   vec3 l = normalize(vec3(0.1, 0.2, -0.5));
   float shade = dot(l, n) + pow(max(dot(l, n), 0.0), 40.0);
 
@@ -67,7 +67,7 @@ vec3 Mucous_Membrane(vec2 pos)
 }
 
 void main() {
-  vec3 color = Mucous_Membrane(vPos.xy);
+  vec3 color = Mucous_Membrane(vPos.xy, 0.3);  // Pass u_speed here
   // keep a little global desaturation / tone like original
   color = color * 0.98 + vec3(0.01);
   fragColor = vec4(color, 1);
