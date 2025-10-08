@@ -31,7 +31,7 @@ public:
 
   std::string vertPath;
   std::string fragPath;
-  std::string fragName = "MistE1.frag";
+  std::string fragName = "CanyonC1.frag";
   std::string mistFolder = "/../miniShader/mistShaders/";
   std::string ripeFolder = "/../miniShader/ripeShaders/";
   al::Parameter globalTime{"globalTime", "", 0.0, 0.0, 300.0};
@@ -47,7 +47,7 @@ public:
 
     searchPaths.addSearchPath(
         al::File::currentPath() +
-        mistFolder); // replace with relative folder
+        ripeFolder); // replace with relative folder
 
     al::FilePath vertPathSource = searchPaths.find("standard.vert");
     if (vertPathSource.valid()) {
@@ -66,7 +66,7 @@ public:
   }
 
   void onCreate() override {
-    shadedSphere.setSphere(15.0, 20);
+    shadedSphere.setSphere(15.0, 20); // make higher res for greater detail? or lower for perfomance boost -- relevant for recording settings or realtime
     shadedSphere.setShaders(vertPath, fragPath);
     shadedSphere.update();
   }
