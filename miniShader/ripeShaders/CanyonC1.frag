@@ -17,7 +17,7 @@ float D = 0.6;
 float wave(vec2 p)
 {
   float v = sin(p.x + sin(p.y*2.) + sin(p.y * 0.43));
-  return v * mod(v,p.x) / p.y;
+  return (v * mod(v,p.x) / p.y) * 100.0 / u_time; // * 100 / u_time to unravel over time
 }
 
 const mat2 rot = mat2(0.5, 0.86, -0.86, 0.5);
@@ -25,22 +25,22 @@ const mat2 rot = mat2(0.5, 0.86, -0.86, 0.5);
 float map(vec2 p)
 {
   float v = wave(p);
-  p.x += u_time * 0.224 ;  p *= rot;  v += wave(p);
-  p.x += u_time * 0.333 / p.y;  p *= rot;  v += wave(p) / p.x;
+  p.x += (u_time+0.01) * 0.224 ;  p *= rot;  v += wave(p);
+  p.x += (u_time+0.01) * 0.333 / p.y;  p *= rot;  v += wave(p) / p.x;
   return abs(1.5 - v + u_time / 10000);
 }
 
 vec3 Mucous_Membrane(vec2 pos)
 {
-  pos.y += u_time * 0.2;
+  pos.y += (u_time+0.01) * 0.2;
   float v = map(pos) ;
 
   // base: mostly white
-  vec3 base = vec3(0.96, 0.97, 0.99);
+  vec3 base = vec3(0.7, 0.9, 0.7); // green ish base 
 
   // streak color (blue-green cyan family), modulated by a lower-frequency map for variation
   float modf = map(pos * 0.12);
-  vec3 streakCol = vec3(0.65, 0.95, 1.00) * (0.6 + 0.6 * modf);
+  vec3 streakCol = vec3(0.4, 0.6, 1.00) * (0.6 + 0.6 * modf);
 
   // streak mask derived from the main field to keep structure intact
   float streakMask = smoothstep(0.35, 0.75, v);
