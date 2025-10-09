@@ -64,13 +64,12 @@ vec4 proceduralTexture(vec2 t) {
 }
 
 // Render Swirl (modularized)
-vec4 renderSwirl(float speed, float size, float pzIn) {
+vec4 renderSwirl(float speed, float size, float pzIn, vec4 bg, float thickness) {
     // efficient UV handling: assume vPos in [-1,1], scale and center with size parameter
     vec2 w = vPos.xy * 400 * size + vec2(400.0, 300.0); // scale UV with size
     vec4 p = vec4(w, 0, 1) / vec4(600.0, 600.0, 1.0, 1.0) - 0.5;
     vec4 d = p;
     p.z += 20.0 - pzIn; // reduced forward motion for better effect
-    vec4 bg = vec4(0, 0, 0, 0);
     vec4 frag = bg;
     float x = 1e9;
 
@@ -88,7 +87,7 @@ vec4 renderSwirl(float speed, float size, float pzIn) {
 
         // simplified texture: single fbm call
         float tex = fbm(vec3(t.xy, T * speed));
-        vec4 c = vec4(tex, tex, tex, 1.0) * 5.0;
+        vec4 c = vec4(tex, tex, tex, 1.0) * thickness; // use thickness parameter
 
         x = abs(mod(length(t.xyz), 1.0) - 0.5);
         float x1 = length(t.xyz) - 7.0;
@@ -228,30 +227,40 @@ void main() {
         if (t > 6.0 && t < 41.0) {
             // begin unraveling
             swirlSpeed = 4.0 + (t - 6.0) / (41.0 - 6.0) * 2.0; // 4 to 6
-        } else if (t > 41.0 && t < 79.0) {
-            // unraveling speeds up
-            swirlSpeed = 6.0 + (t - 41.0) / (79.0 - 41.0) * 4.0; // 6 to 10
-        } // at 79, unraveling finishes, speed stays or slows
+        } else if (t > 41.0 && t < 70.0) {
+            // unraveling speeds up to 70
+            swirlSpeed = 6.0 + (t - 41.0) / (70.0 - 41.0) * 4.0; // 6 to 10 at 70
+        } else if (t > 70.0 && t < 88.0) {
+            // begin slowing down much slower
+            swirlSpeed = 10.0 - (t - 70.0) / (88.0 - 70.0) * 5.0; // 10 to 5.0, slower reversal
+        }
 
         float opacity = 1.0;
         if (t < 6.0) {
             opacity = t / 6.0; // fade in
         }
 
-        vec4 swirlColor = renderSwirl(swirlSpeed, 1.0, swirlSize); // size=1.0, pzIn=swirlSize, like CanyonA3
-
-        // Color changes
+        // Golden transition: subtle yellow tint from 70, gradually white background from 76, keep orb-like
+        vec4 bg = vec4(0, 0, 0, 0);
         vec3 tint = vec3(1.0);
-        if (t > 80.0 && t < 86.0) {
-            float factor = (t - 80.0) / (86.0 - 80.0);
-            tint = mix(vec3(1.0), vec3(1.0, 0.8, 0.0), factor); // white to sun luck yellow
-        } else if (t > 86.0 && t < 88.0) {
-            float factor = (t - 86.0) / (88.0 - 86.0);
-            tint = mix(vec3(1.0, 0.8, 0.0), vec3(1.0), factor); // orange yellow back to white
+        float size = 1.0;
+        float thickness = 5.0;
+        if (t > 70.0 && t < 88.0) {
+            float tintFactor = (t - 70.0) / (88.0 - 70.0);
+            tint = mix(vec3(1.0), vec3(1.0, 0.95, 0.9), tintFactor); // subtle yellow tint
         }
+        if (t > 76.0 && t < 88.0) {
+            float bgFactor = (t - 76.0) / (88.0 - 76.0);
+            bg = mix(vec4(0, 0, 0, 0), vec4(1.0, 1.0, 1.0, 0), bgFactor); // gradually white background
+            // fade out swirl as white fades in
+            opacity *= (1.0 - bgFactor);
+        }
+
+        vec4 swirlColor = renderSwirl(swirlSpeed, size, swirlSize, bg, thickness); // keep size and thickness constant
 
         swirlColor.rgb *= tint;
         swirlColor.rgb *= opacity; // apply fade in
+
         fragColor = swirlColor;
     } else if (t < 242.0) {
         // PART B - mucous membrane fractal
@@ -275,5 +284,12 @@ void main() {
         float fade = 1.0 - (t - 230.0) / (242.0 - 230.0);
         fade = clamp(fade, 0.0, 1.0);
         fragColor = vec4(0.0, 0.0, 0.0, fade);
+    }
+
+    // Smooth fade from golden swirl to membrane, ended at 88s to avoid lingering white
+    if (t >= 76.0 && t < 88.0) {
+        vec3 membraneColor = Mucous_Membrane(vPos.xy, 0.3, 1.0);
+        float blend = (t - 76.0) / 12.0; // adjusted duration to 12 seconds
+        fragColor.rgb = mix(fragColor.rgb, membraneColor, blend);
     }
 }

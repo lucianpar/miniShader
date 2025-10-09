@@ -37,11 +37,11 @@ public:
   std::string ripeFolder = "/../miniShader/ripeShaders/";
   al::Parameter globalTime{"globalTime", "", 0.0, 0.0, 300.0};
   al::ParameterBool running{"running", "0", true};
-  bool printTime = false;
+  bool printTime = true;
 
   // Audio related
   al::SoundFilePlayer player;
-  std::string audioName = "Canyon.wav";
+  std::string audioName = "CanyonA4.wav";
   std::string audioPath = "/Users/lucian/Desktop/ripeAudio/Canyon.wav";
   float audioGain = 0.5f;
 
