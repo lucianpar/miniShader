@@ -186,33 +186,33 @@ void main() {
     bool isParticles = false;
     bool blueGlow = false; // flag for blueish glow in center
 
-    // Sand fade in/out gradual
+    // Sand fade in/out gradual, smoothed over longer periods
     if (t >= 28.0 && t <= 35.0) {
-        float fadeIn = smoothstep(28.0, 29.0, t);
-        float fadeOut = smoothstep(35.0, 34.0, t);
+        float fadeIn = smoothstep(28.0, 30.0, t); // 2 seconds fade in
+        float fadeOut = smoothstep(35.0, 33.0, t); // 2 seconds fade out
         sandIntensity = fadeIn * fadeOut;
-        blueGlow = true; // blue glow during this period
+        blueGlow = true;
     }
     if (t >= 43.0 && t <= 49.0) {
-        float fadeIn = smoothstep(43.0, 44.0, t);
-        float fadeOut = smoothstep(49.0, 48.0, t);
+        float fadeIn = smoothstep(43.0, 45.0, t);
+        float fadeOut = smoothstep(49.0, 47.0, t);
         sandIntensity = fadeIn * fadeOut;
         blueGlow = true;
     }
     if (t >= 75.0 && t <= 84.0) {
-        float fadeIn = smoothstep(75.0, 76.0, t);
-        float fadeOut = smoothstep(84.0, 83.0, t);
+        float fadeIn = smoothstep(75.0, 77.0, t);
+        float fadeOut = smoothstep(84.0, 82.0, t);
         sandIntensity = fadeIn * fadeOut;
         blueGlow = true;
     }
     if (t >= 91.0 && t <= 136.5) {
-        float fadeIn = smoothstep(91.0, 92.0, t);
-        float fadeOut = smoothstep(136.5, 135.5, t);
+        float fadeIn = smoothstep(91.0, 93.0, t);
+        float fadeOut = smoothstep(136.5, 134.5, t);
         sandIntensity = fadeIn * fadeOut;
         blueGlow = true;
     }
     if (t >= 141.0 && t <= 255.0) {
-        float fadeIn = smoothstep(141.0, 142.0, t);
+        float fadeIn = smoothstep(141.0, 143.0, t);
         sandIntensity = fadeIn;
         blueGlow = true;
     }
