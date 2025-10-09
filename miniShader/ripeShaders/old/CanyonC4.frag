@@ -59,7 +59,7 @@ float map(vec2 p, float speed)
   float l = sin(angle);
   float s = 1.0;
   // Chaos factor that increases over time to unravel the fractal
-  float chaosFactor = u_time * 0.005; // slow accumulation of chaos
+  float chaosFactor = u_time * 0.005; // slow accumulation of chaos // play with / change this value, 0riginally 0.005
   
   for(int i=0; i<15; ++i) {  // iterative folding for fractal structure
       p.x = abs(p.x) - s;
@@ -117,7 +117,7 @@ vec3 Mucous_Membrane(vec2 pos, float speed, float thickness)
 }
 
 void main() {
-  vec3 color = Mucous_Membrane(vPos.xy, 0.3, 1.0);  // Pass u_speed here
+  vec3 color = Mucous_Membrane(vPos.xy, 0.3, 1.0);  // try changing speed - 0.3, Pass thickness here. trying out different values - 0.5,1,10.0
   // keep a little global desaturation / tone like original
   color = color * 0.98 + vec3(0.01);
   fragColor = vec4(color, 1);
