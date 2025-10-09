@@ -32,7 +32,7 @@ public:
 
   std::string vertPath;
   std::string fragPath;
-  std::string fragName = "Dunes6.frag";
+  std::string fragName = "CanyonScene.frag";
   std::string mistFolder = "/../miniShader/mistShaders/";
   std::string ripeFolder = "/../miniShader/ripeShaders/";
   al::Parameter globalTime{"globalTime", "", 0.0, 0.0, 300.0};
@@ -41,8 +41,8 @@ public:
 
   // Audio related
   al::SoundFilePlayer player;
-  std::string audioName = "Scat.wav";
-  std::string audioPath = "/Users/lucian/Desktop/ripeAudio/Scat.wav";
+  std::string audioName = "Canyon.wav";
+  std::string audioPath = "/Users/lucian/Desktop/ripeAudio/Canyon.wav";
   float audioGain = 0.5f;
 
   void onInit() override {
