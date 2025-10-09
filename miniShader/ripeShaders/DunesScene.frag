@@ -67,7 +67,7 @@ vec3 Solar_Plasma(vec2 p) {
 }
 
 // === Render Sun Base (body, purple tendrils, decay cells) ===
-vec3 renderSunBase(vec2 uv, float r, float body, float chaosFactor) {
+vec3 renderSunBase(vec2 uv, float r, float body, float chaosFactor, bool blueGlow) {
     // Apply chaotic distortion to UV based on chaos factor
     vec2 chaosUV = uv;
     if (chaosFactor > 0.0) {
@@ -77,6 +77,13 @@ vec3 renderSunBase(vec2 uv, float r, float body, float chaosFactor) {
 
     vec3 plasma = Solar_Plasma(chaosUV * 3.0);
     vec3 sunColor = plasma * body;
+
+    // Blueish glow in center during blueGlow periods
+    if (blueGlow) {
+        float centerMask = smoothstep(0.5, 0.0, r); // stronger in center
+        vec3 blueGlowColor = vec3(0.2, 0.5, 1.0) * centerMask * 0.8;
+        sunColor = mix(sunColor, blueGlowColor, centerMask);
+    }
 
     // Dark purple inner tendrils - intensify with chaos
     float tW1 = wave(chaosUV * 6.0 + u_time * 0.2);
@@ -115,9 +122,13 @@ vec3 renderSunEffects(vec2 uv, float r, vec3 sunColor, float chaosFactor) {
 
 // === Render Sand (reddish grainy obscuring effect extending around the orb) ===
 vec3 renderSand(vec2 uv, float r, float body, vec3 sunColor, float sandIntensity) {
-    // Sandy noise that obscures the sun like blowing sand
-    // Scrolling sandy noise that blows across
-    vec2 sandUV = uv + vec2(u_time * 0.5, sin(u_time * 0.3) * 0.2); // faster scroll with more vertical movement
+    // Sandy noise that obscures the sun like blowing sand from all directions
+    // Use rotating and noisy offset for irregular, multi-directional movement
+    float angle = u_time * 0.3;
+    vec2 rotateOffset = vec2(cos(angle), sin(angle)) * 0.3;
+    vec2 noiseOffset = vec2(fbm(uv * 3.0 + u_time * 0.2), fbm(uv * 3.0 + u_time * 0.2 + 10.0)) * 0.5;
+    vec2 sandUV = uv + rotateOffset + noiseOffset; // irregular, rotating movement
+    
     float sandGrain = fbm(sandUV * 20.0); // higher frequency for finer, grainier sand
     
     // Subtractive obscuring effect - even darker sand (only on sun body)
@@ -168,36 +179,42 @@ void main() {
     float t = u_time;
 
     // Timeline logic
-    float orbOpacity = 0.0;
-    float growthFactor = mix(0.1, 2.0, t / 255.0); // slow growth over entire track
+    float orbOpacity = 1.0; // always visible
+    float growthFactor = mix(0.001, 2.0, t / 255.0); // start super tiny, slow growth over entire track
     float sandIntensity = 0.0;
     float tendrilDensity = 0.0;
     bool isParticles = false;
+    bool blueGlow = false; // flag for blueish glow in center
 
     // Sand fade in/out gradual
     if (t >= 28.0 && t <= 35.0) {
         float fadeIn = smoothstep(28.0, 29.0, t);
         float fadeOut = smoothstep(35.0, 34.0, t);
         sandIntensity = fadeIn * fadeOut;
+        blueGlow = true; // blue glow during this period
     }
     if (t >= 43.0 && t <= 49.0) {
         float fadeIn = smoothstep(43.0, 44.0, t);
         float fadeOut = smoothstep(49.0, 48.0, t);
         sandIntensity = fadeIn * fadeOut;
+        blueGlow = true;
     }
     if (t >= 75.0 && t <= 84.0) {
         float fadeIn = smoothstep(75.0, 76.0, t);
         float fadeOut = smoothstep(84.0, 83.0, t);
         sandIntensity = fadeIn * fadeOut;
+        blueGlow = true;
     }
     if (t >= 91.0 && t <= 136.5) {
         float fadeIn = smoothstep(91.0, 92.0, t);
         float fadeOut = smoothstep(136.5, 135.5, t);
         sandIntensity = fadeIn * fadeOut;
+        blueGlow = true;
     }
     if (t >= 141.0 && t <= 255.0) {
         float fadeIn = smoothstep(141.0, 142.0, t);
         sandIntensity = fadeIn;
+        blueGlow = true;
     }
 
     // Tendril fade in/out gradual
@@ -221,70 +238,7 @@ void main() {
         tendrilDensity = 1.0 - (t - 173.0) / (255.0 - 173.0);
     }
 
-    if (t < 19.0) {
-        // 0-19: fade in
-        orbOpacity = t / 19.0;
-    } else if (t < 28.0) {
-        // 19-28: fully in
-        orbOpacity = 1.0;
-    } else if (t < 30.0) {
-        // 28-30: fade out
-        orbOpacity = 1.0 - (t - 28.0) / 2.0;
-    } else if (t < 35.0) {
-        // 30-35: black
-        orbOpacity = 0.0;
-    } else if (t < 43.0) {
-        // 35-43: fade in
-        orbOpacity = (t - 35.0) / 8.0;
-    } else if (t < 47.0) {
-        // 43-47: fade out
-        orbOpacity = 1.0 - (t - 43.0) / 4.0;
-    } else if (t < 49.0) {
-        // 47-49: black
-        orbOpacity = 0.0;
-    } else if (t < 66.0) {
-        // 49-66: tendril cloud
-        // density handled above
-    } else if (t < 75.0) {
-        // 66-75: orb fade in
-        orbOpacity = (t - 66.0) / 9.0;
-    } else if (t < 77.0) {
-        // 75-77: fade out
-        orbOpacity = 1.0 - (t - 75.0) / 2.0;
-    } else if (t < 84.0) {
-        // 77-84: black
-        orbOpacity = 0.0;
-    } else if (t < 91.0) {
-        // 84-91: fade in
-        orbOpacity = (t - 84.0) / 7.0;
-    } else if (t < 93.0) {
-        // 91-93: fade out
-        orbOpacity = 1.0 - (t - 91.0) / 2.0;
-    } else if (t < 112.0) {
-        // 93-112: tendril cloud
-        // density handled above
-    } else if (t < 121.0) {
-        // 112-121: orb fade in
-        orbOpacity = (t - 112.0) / 9.0;
-    } else if (t < 123.0) {
-        // 121-123: fade out
-        orbOpacity = 1.0 - (t - 121.0) / 2.0;
-    } else if (t < 136.5) {
-        // 123-136.5: black
-        orbOpacity = 0.0;
-    } else if (t < 141.0) {
-        // 136.5-141: fade in
-        orbOpacity = (t - 136.5) / 4.5;
-    } else if (t < 143.0) {
-        // 141-143: fade out
-        orbOpacity = 1.0 - (t - 141.0) / 2.0;
-    } else if (t < 173.0) {
-        // 143-173: tendril cloud
-        // density handled above
-    } else if (t < 255.0) {
-        // 173-255: particles
-        // handled above
-    }
+    // No more orb opacity phases, always visible
 
     // --- No pulsing ---
 
@@ -294,13 +248,13 @@ void main() {
 
     // === Sun body mask ===
     float sunRadius = 1.0;
-    float body = smoothstep(sunRadius, 0.0, r) * orbOpacity;
+    float body = smoothstep(sunRadius, 0.0, r);
 
     // === Chaos factor increases over the track ===
     float chaosFactor = 1.0; // always max for now
 
     // === Modular rendering ===
-    vec3 sunBase = renderSunBase(uv, r, body, chaosFactor);
+    vec3 sunBase = renderSunBase(uv, r, body, chaosFactor, blueGlow);
     vec3 sunWithSand = renderSand(uv, r, body, sunBase, sandIntensity);
     vec3 finalSun = renderSunEffects(uv, r, sunWithSand, chaosFactor);
     
