@@ -86,7 +86,7 @@ vec3 Mucous_Membrane(vec2 pos, float speed, float thickness)
   float v = map(p, speed);
 
   // base: mostly white
-  vec3 base = vec3(0.1, 0.4, 0.1); // green ish base 
+  vec3 base = vec3(1.0, 0.855, 0.0); // gold ish base 
 
   // streak color (blue-green cyan family), modulated by a lower-frequency map for variation
   float modf = map(p * 0.12, speed);
