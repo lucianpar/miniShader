@@ -7,7 +7,7 @@ out vec4 fragColor;
 
 uniform float u_time;
 
-const float TRACK_LENGTH = 60.0;  // fixed track length in seconds
+const float TRACK_LENGTH = 255.0;  // updated to 255 seconds
 
 // === Noise functions for sandy effect ===
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
@@ -114,12 +114,8 @@ vec3 renderSunEffects(vec2 uv, float r, vec3 sunColor, float chaosFactor) {
 }
 
 // === Render Sand (reddish grainy obscuring effect extending around the orb) ===
-vec3 renderSand(vec2 uv, float r, float body, vec3 sunColor) {
+vec3 renderSand(vec2 uv, float r, float body, vec3 sunColor, float sandIntensity) {
     // Sandy noise that obscures the sun like blowing sand
-    float sandPeriod = 4.0; // every 4 seconds for more frequent effect
-    float sandCycle = fract(u_time / sandPeriod);
-    float sandIntensity = smoothstep(0.0, 0.2, sandCycle) * (1.0 - smoothstep(0.8, 1.0, sandCycle)); // fade in/out
-    
     // Scrolling sandy noise that blows across
     vec2 sandUV = uv + vec2(u_time * 0.5, sin(u_time * 0.3) * 0.2); // faster scroll with more vertical movement
     float sandGrain = fbm(sandUV * 20.0); // higher frequency for finer, grainier sand
@@ -137,58 +133,179 @@ vec3 renderSand(vec2 uv, float r, float body, vec3 sunColor) {
 }
 
 // === Render Tendril Cloud (wispy tendrils over top) ===
-vec3 renderTendrilCloud(vec2 uv, float r, float chaosFactor) {
-    // Offset UV to move the cloud to the left
-    vec2 offsetUV = uv + vec2(-0.5, 0.0); // shift left by 0.5 units
-    
-    // Use wave functions to create elongated tendrils
-    float t1 = wave(offsetUV * 1.5 + u_time * 0.1);
-    float t2 = wave2(offsetUV * 1.7 - u_time * 0.08);
-    float cloudDensity = (t1 + t2) * 0.5;
-    cloudDensity = smoothstep(0.0, 0.5, cloudDensity); // adjusted for more density
-    
-    // Intensify with chaos
-    cloudDensity *= (1.0 + chaosFactor * 0.5);
-    
-    // White cloud color, increased brightness
-    vec3 cloudColor = vec3(1.0, 1.0, 1.0) * cloudDensity * 0.6; // brighter
-    
-    // Mask to appear over the sun, starting from center
-    float mask = smoothstep(0.0, 1.0, r); // visible from center
-    cloudColor *= mask;
-    
-    return cloudColor;
+vec3 renderTendrilCloud(vec2 uv, float r, float chaosFactor, float density, bool isParticles) {
+    if (isParticles) {
+        // Small particles mode
+        vec2 particleUV = uv * 10.0 + u_time * 0.1;
+        float particles = fbm(particleUV) * density;
+        particles = smoothstep(0.3, 0.7, particles);
+        return vec3(1.0, 1.0, 1.0) * particles * 0.5;
+    } else {
+        // Offset UV to move the cloud to the left
+        vec2 offsetUV = uv + vec2(-0.5, 0.0); // shift left by 0.5 units
+        
+        // Use wave functions to create elongated tendrils
+        float t1 = wave(offsetUV * 1.5 + u_time * 0.1);
+        float t2 = wave2(offsetUV * 1.7 - u_time * 0.08);
+        float cloudDensity = (t1 + t2) * 0.5;
+        cloudDensity = smoothstep(0.0, 0.5, cloudDensity); // adjusted for more density
+        
+        // Intensify with chaos
+        cloudDensity *= (1.0 + chaosFactor * 0.5);
+        
+        // White cloud color, adjusted brightness
+        vec3 cloudColor = vec3(1.0, 1.0, 1.0) * cloudDensity * density; // use density parameter
+        
+        // Mask to appear over the sun, starting from center
+        float mask = smoothstep(0.0, 1.0, r); // visible from center
+        cloudColor *= mask;
+        
+        return cloudColor;
+    }
 }
 
 void main() {
-    // --- Growth factor over track ---
-    float startTime = 0.0; // seconds
-    float growT = clamp((u_time - startTime) / TRACK_LENGTH, 0.0, 1.0);
-    // small at start (0.1) → fills screen (2.0)
-    float growthFactor = mix(0.1, 2.0, growT);
+    float t = u_time;
 
-    // --- Pulsing (breathing every 8s) ---
-    float pulseAmount = 1.5 * (u_time / TRACK_LENGTH); // increase over time
-    float pulse = 1.0 + pulseAmount * sin(u_time * 6.28318 / 8.0);
+    // Timeline logic
+    float orbOpacity = 0.0;
+    float growthFactor = mix(0.1, 2.0, t / 255.0); // slow growth over entire track
+    float sandIntensity = 0.0;
+    float tendrilDensity = 0.0;
+    bool isParticles = false;
+
+    // Sand fade in/out gradual
+    if (t >= 28.0 && t <= 35.0) {
+        float fadeIn = smoothstep(28.0, 29.0, t);
+        float fadeOut = smoothstep(35.0, 34.0, t);
+        sandIntensity = fadeIn * fadeOut;
+    }
+    if (t >= 43.0 && t <= 49.0) {
+        float fadeIn = smoothstep(43.0, 44.0, t);
+        float fadeOut = smoothstep(49.0, 48.0, t);
+        sandIntensity = fadeIn * fadeOut;
+    }
+    if (t >= 75.0 && t <= 84.0) {
+        float fadeIn = smoothstep(75.0, 76.0, t);
+        float fadeOut = smoothstep(84.0, 83.0, t);
+        sandIntensity = fadeIn * fadeOut;
+    }
+    if (t >= 91.0 && t <= 136.5) {
+        float fadeIn = smoothstep(91.0, 92.0, t);
+        float fadeOut = smoothstep(136.5, 135.5, t);
+        sandIntensity = fadeIn * fadeOut;
+    }
+    if (t >= 141.0 && t <= 255.0) {
+        float fadeIn = smoothstep(141.0, 142.0, t);
+        sandIntensity = fadeIn;
+    }
+
+    // Tendril fade in/out gradual
+    if (t >= 49.0 && t <= 66.0) {
+        float fadeIn = smoothstep(49.0, 52.0, t);
+        float fadeOut = smoothstep(66.0, 63.0, t);
+        tendrilDensity = 0.6 * fadeIn * fadeOut;
+    }
+    if (t >= 93.0 && t <= 112.0) {
+        float fadeIn = smoothstep(93.0, 96.0, t);
+        float fadeOut = smoothstep(112.0, 109.0, t);
+        tendrilDensity = 0.3 * fadeIn * fadeOut;
+    }
+    if (t >= 143.0 && t <= 173.0) {
+        float fadeIn = smoothstep(143.0, 146.0, t);
+        float fadeOut = smoothstep(173.0, 170.0, t);
+        tendrilDensity = 0.6 * fadeIn * fadeOut;
+    }
+    if (t >= 173.0 && t <= 255.0) {
+        isParticles = true;
+        tendrilDensity = 1.0 - (t - 173.0) / (255.0 - 173.0);
+    }
+
+    if (t < 19.0) {
+        // 0-19: fade in
+        orbOpacity = t / 19.0;
+    } else if (t < 28.0) {
+        // 19-28: fully in
+        orbOpacity = 1.0;
+    } else if (t < 30.0) {
+        // 28-30: fade out
+        orbOpacity = 1.0 - (t - 28.0) / 2.0;
+    } else if (t < 35.0) {
+        // 30-35: black
+        orbOpacity = 0.0;
+    } else if (t < 43.0) {
+        // 35-43: fade in
+        orbOpacity = (t - 35.0) / 8.0;
+    } else if (t < 47.0) {
+        // 43-47: fade out
+        orbOpacity = 1.0 - (t - 43.0) / 4.0;
+    } else if (t < 49.0) {
+        // 47-49: black
+        orbOpacity = 0.0;
+    } else if (t < 66.0) {
+        // 49-66: tendril cloud
+        // density handled above
+    } else if (t < 75.0) {
+        // 66-75: orb fade in
+        orbOpacity = (t - 66.0) / 9.0;
+    } else if (t < 77.0) {
+        // 75-77: fade out
+        orbOpacity = 1.0 - (t - 75.0) / 2.0;
+    } else if (t < 84.0) {
+        // 77-84: black
+        orbOpacity = 0.0;
+    } else if (t < 91.0) {
+        // 84-91: fade in
+        orbOpacity = (t - 84.0) / 7.0;
+    } else if (t < 93.0) {
+        // 91-93: fade out
+        orbOpacity = 1.0 - (t - 91.0) / 2.0;
+    } else if (t < 112.0) {
+        // 93-112: tendril cloud
+        // density handled above
+    } else if (t < 121.0) {
+        // 112-121: orb fade in
+        orbOpacity = (t - 112.0) / 9.0;
+    } else if (t < 123.0) {
+        // 121-123: fade out
+        orbOpacity = 1.0 - (t - 121.0) / 2.0;
+    } else if (t < 136.5) {
+        // 123-136.5: black
+        orbOpacity = 0.0;
+    } else if (t < 141.0) {
+        // 136.5-141: fade in
+        orbOpacity = (t - 136.5) / 4.5;
+    } else if (t < 143.0) {
+        // 141-143: fade out
+        orbOpacity = 1.0 - (t - 141.0) / 2.0;
+    } else if (t < 173.0) {
+        // 143-173: tendril cloud
+        // density handled above
+    } else if (t < 255.0) {
+        // 173-255: particles
+        // handled above
+    }
+
+    // --- No pulsing ---
 
     // scale uv: smaller growthFactor → smaller object
-    vec2 uv = (vPos.xy / 6.0) / growthFactor * pulse ; // removing pulse for now. / pulse;
+    vec2 uv = (vPos.xy / 6.0) / growthFactor;
     float r = length(uv);
 
     // === Sun body mask ===
     float sunRadius = 1.0;
-    float body = smoothstep(sunRadius, 0.0, r);
+    float body = smoothstep(sunRadius, 0.0, r) * orbOpacity;
 
     // === Chaos factor increases over the track ===
-    float chaosFactor = growT; // 0 at start, 1 at end
+    float chaosFactor = 1.0; // always max for now
 
     // === Modular rendering ===
     vec3 sunBase = renderSunBase(uv, r, body, chaosFactor);
-    vec3 sunWithSand = renderSand(uv, r, body, sunBase);
+    vec3 sunWithSand = renderSand(uv, r, body, sunBase, sandIntensity);
     vec3 finalSun = renderSunEffects(uv, r, sunWithSand, chaosFactor);
     
     // === Add Tendril Cloud over top ===
-    vec3 tendrilCloud = renderTendrilCloud(uv, r, chaosFactor);
+    vec3 tendrilCloud = renderTendrilCloud(uv, r, chaosFactor, tendrilDensity, isParticles);
 
     // === Combine ===
     vec3 color = finalSun + tendrilCloud;
