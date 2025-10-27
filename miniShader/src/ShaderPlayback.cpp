@@ -32,7 +32,7 @@ public:
 
   std::string vertPath;
   std::string fragPath;
-  std::string fragName = "ScatScene.frag";
+  std::string fragName = "NoisySmoke.frag";
   std::string mistFolder = "/../miniShader/mistShaders/";
   std::string ripeFolder = "/../miniShader/ripeShaders/";
   al::Parameter globalTime{"globalTime", "", 0.0, 0.0, 300.0};
@@ -47,7 +47,7 @@ public:
 
   void onInit() override {
     // Graphics initialization
-    searchPaths.addSearchPath(al::File::currentPath() + ripeFolder);
+    searchPaths.addSearchPath(al::File::currentPath() + mistFolder);
 
     al::FilePath vertPathSource = searchPaths.find("standard.vert");
     if (vertPathSource.valid()) {
