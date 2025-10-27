@@ -9,16 +9,16 @@ uniform float u_time;
 #define TWO_PI 6.283
 
 // === UTILITIES (kept, corrected) ===
-float gyroid(vec3 seed) {
+float PointLineGyroid(vec3 seed) {
     return dot(sin(seed), cos(seed.yzx));
 }
 
-float fbm(vec3 seed) {
+float PointLineFbm(vec3 seed) {
     float result = 0.0;
     float a = 0.5;
     for (int i = 0; i < 6; ++i) {
         seed.z += result * 0.5;
-        result += abs(gyroid(seed / a)) * a;
+        result += abs(PointLineGyroid(seed / a)) * a;
         a *= 0.5;
     }
     return clamp(result, 0.0, 1.0);
@@ -26,7 +26,7 @@ float fbm(vec3 seed) {
 
 // === SMOKE 3 (HOLLOW MESH) ===
 // Now takes rotation (radians) and speed multipliers as parameters.
-vec4 shaderHollowMesh(vec2 uv, float t, float rotation, float speed) {
+vec4 PointLineShaderHollowMesh(vec2 uv, float t, float rotation, float speed) {
     // apply rotation around center
     float c = cos(rotation), s = sin(rotation);
     mat2 R = mat2(c, -s, s, c);
@@ -38,8 +38,8 @@ vec4 shaderHollowMesh(vec2 uv, float t, float rotation, float speed) {
     float scale = 0.5;
     vec3 p = vec3(uvR * scale, T * 0.12);
 
-    float field = fbm(p / 2.0);
-    field += 0.35 * fbm(p * 4.4 + vec3(12.3, 4.1, T * 0.08));
+    float field = PointLineFbm(p / 2.0);
+    field += 0.35 * PointLineFbm(p * 4.4 + vec3(12.3, 4.1, T * 0.08));
 
     float center = 0.8;
     float thickness = 0.13;
@@ -52,10 +52,10 @@ vec4 shaderHollowMesh(vec2 uv, float t, float rotation, float speed) {
 
     // sample neighbors for gradient (used to detect edges/outlines)
     float eps = 0.005;
-    float fx = fbm(vec3((uvR + vec2(eps, 0.0)) * scale * 2.0, T * 0.12));
-    float bx = fbm(vec3((uvR - vec2(eps, 0.0)) * scale * 2.0, T * 0.12));
-    float fy = fbm(vec3((uvR + vec2(0.0, eps)) * scale * 2.0, T * 0.12));
-    float by = fbm(vec3((uvR - vec2(0.0, eps)) * scale * 2.0, T * 0.12));
+    float fx = PointLineFbm(vec3((uvR + vec2(eps, 0.0)) * scale * 2.0, T * 0.12));
+    float bx = PointLineFbm(vec3((uvR - vec2(eps, 0.0)) * scale * 2.0, T * 0.12));
+    float fy = PointLineFbm(vec3((uvR + vec2(0.0, eps)) * scale * 2.0, T * 0.12));
+    float by = PointLineFbm(vec3((uvR - vec2(0.0, eps)) * scale * 2.0, T * 0.12));
     vec2 grad = vec2(fx - bx, fy - by) / (2.0 * eps);
     float g = length(grad);
 
@@ -91,21 +91,19 @@ vec4 shaderHollowMesh(vec2 uv, float t, float rotation, float speed) {
     return vec4(finalCol, alpha);
 }
 
-// === MAIN ===
-void main() {
-    vec2 uv = vPos.xy / 2.0;
-    float t = u_time;
-
+// === MAIN LOGIC ===
+vec4 PointLineMain(vec2 uv, float t) {
     // primary (foreground) hollow mesh
+    vec2 newUV = uv / 2.0; // scale down for more detail
     float rotationA = 0.0;
     float speedA = 10.0;
-    vec4 layerA = shaderHollowMesh(uv, t, rotationA, speedA);
+    vec4 layerA = PointLineShaderHollowMesh(newUV, t, rotationA, speedA);
 
     // secondary (background) hollow mesh offset by 170 degrees for depth
     float rotOffset = 170.0 * 3.14159265359 / 180.0;
     float rotationB = rotOffset;
     float speedB = 5.2; // slightly different speed for parallax feel
-    vec4 layerB = shaderHollowMesh(uv, t, rotationB, speedB);
+    vec4 layerB = PointLineShaderHollowMesh(uv, t, rotationB, speedB);
 
     // composite: background darker and slightly dimmed, foreground on top
     vec3 bgBlend = layerB.rgb * 0.6;
@@ -122,5 +120,13 @@ void main() {
     finalA *= fadeIn;
     finalA = mix(finalA, 1.0, fadeOut);
 
-    fragColor = vec4(finalRGB, finalA);
+    return vec4(finalRGB, finalA);
+}
+
+// === MAIN ===
+void main() {
+    float t = u_time;
+    vec2 uv = vPos.xy;
+
+    fragColor = PointLineMain(uv, t);
 }

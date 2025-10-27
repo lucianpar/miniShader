@@ -32,7 +32,7 @@ public:
 
   std::string vertPath;
   std::string fragPath;
-  std::string fragName = "Smoke.frag";
+  std::string fragName = "PointLine.frag";
   std::string mistFolder = "/../miniShader/mistShaders/";
   std::string ripeFolder = "/../miniShader/ripeShaders/";
   al::Parameter globalTime{"globalTime", "", 0.0, 0.0, 300.0};
