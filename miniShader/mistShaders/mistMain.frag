@@ -125,6 +125,7 @@ vec4 smokeFoamBubble(vec2 uv, float t) {
 vec4 SmokeMain(vec2 uv, float t, float s) {
     // Removed redundant newUV scaling (uv is already scaled in main())
     // Use SmokeSrc for a grey misty mountaintop effect
+    uv = uv * 3.0;
     vec4 finalColor = SmokeSrc(uv, t, s);
 
     // === FADE IN from black ===
@@ -477,7 +478,11 @@ void main() {
     // Event list based on timeline
     if (t >= 0.0 && t < 66.0) {
         // 0:00 – 1:06: Smoke (Soft light mist, gentle motion, fade-in → fade-out.)
-        fragColor = SmokeMain(uv, t, 0.015);
+        // Slow zoom in over the section, then rapid zoom out at 65.5
+        float zoom = 1.0 - (t / 70.0) * 1.1; // Slow zoom in from 1.0 to 1.5
+       
+        vec2 zoomedUV = uv * zoom;
+        fragColor = SmokeMain(zoomedUV, t, 0.015);
     } else if (t >= 66.0 && t < 104.0) {
         t = t - 66.0; // Reset time for this segment
         // 1:06 – 1:44: Noisy Smoke (Mist becomes more active and granular; low-frequency noise modulation.)
@@ -488,6 +493,7 @@ void main() {
     } else if (t >= 137.0 && t < 170.0) {
         // 2:17 – 2:50: Smoke (Running Phase) (Return to mist, increase movement speed, dynamic camera; mist grows thicker as if “chasing” or “escaping.”)
         // Note: Using SmokeMain, but you may need to modify it internally for increased speed if desired.
+        
         fragColor = SmokeMain(uv, t, 3.0);
     } else if (t >= 170.0) {
         // 2:50 – End: Cellular Noise (Rhythmic, spasmodic motion; multiple layers of mist and smoke overlapping; dynamic “bass-reactive” visuals.)
