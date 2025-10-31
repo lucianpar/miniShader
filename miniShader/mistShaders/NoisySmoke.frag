@@ -36,19 +36,19 @@ vec4 NoisySmokeSrc(vec2 uv, float t) {
     uv *= 0.5;
 
     // Use NoisySmokefbm for base structure, with smaller scale for distinct dots
-    float mist = NoisySmokefbm(vec3(uv * 10.0, t * 0.1));  // Higher frequency for smaller structures
+    float mist = NoisySmokefbm(vec3(uv * 10.0, t * 0.1)); // Higher frequency for smaller structures
 
     // Sharpen and isolate the cloud dots
-    float cloudDots = smoothstep(0.3, 0.8, mist);  // Isolate brighter regions
-    //cloudDots = pow(cloudDots, 30.0);  // Sharpen the dots
+    float cloudDots = smoothstep(0.3, 0.8, mist); // Isolate brighter regions
+    cloudDots = pow(cloudDots, 30.0); // Sharpen the dots
 
     // Add grain for texture, but keep it subtle
-    float grain = NoisySmokeGrainNoise(uv * 2.0, t);  // Moderate frequency for grain
-    mist = mix(cloudDots, grain, 0.5);  // Blend grain lightly with the cloud dots
+    float grain = NoisySmokeGrainNoise(uv * 2.0, t); // Moderate frequency for grain
+    mist = mix(cloudDots, grain, 0.2); // Blend grain lightly with the cloud dots (reduced grain influence to make clouds more visible)
 
     // Mask for forming inward from outside
     float dist = length(uv);
-    float formInward = 1.0 - smoothstep(0.0, 1.5 - t * 0.005, dist);  // Starts at edges, forms towards center over time
+    float formInward = 1.0 - smoothstep(0.0, 1.5 - t * 0.005, dist); // Starts at edges, forms towards center over time
 
     // Intensity with inward formation
     float intensity = mist * 0.8 * formInward;
@@ -56,11 +56,11 @@ vec4 NoisySmokeSrc(vec2 uv, float t) {
     // Grey misty colors
     vec3 color = mix(vec3(0.4, 0.4, 0.4), vec3(0.8, 0.8, 0.8), 0.5 + 0.2 * sin(t * 0.005 + mist * 0.5));
 
-    return vec4(color * intensity, 0.1 + 0.6 * intensity);  // Higher alpha for visibility
+    return vec4(color * intensity, 0.1 + 0.6 * intensity); // Higher alpha for visibility
 }
 
  vec4 NoisySmokeFinal(vec2 uv, float t) {
-    vec2 newUV = uv/10.0;
+    vec2 newUV = uv/20.0;
     // Use NoisySmokeSrc for a collection of little cloud dots
     vec4 finalColor = NoisySmokeSrc(newUV, t);
 
