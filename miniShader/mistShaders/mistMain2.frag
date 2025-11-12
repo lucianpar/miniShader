@@ -475,6 +475,8 @@ void main() {
     vec2 uv = vPos.xy / 10.0;
     float t = u_time;
 
+    //SECTION 1
+
     // 0:00 – 1:04 (64s): Smoke with gradual acceleration
     if (t >= 0.0 && t < 64.0) {
         float zoom = 1.0;
@@ -499,28 +501,37 @@ void main() {
         vec2 zoomedUV = uv * zoom;
         fragColor = SmokeMain(zoomedUV, t, speedMult);
     }
+
+    //SECTION 2
     // 1:04 – 1:42 (64-102s): Grey background with progressive black movements
     else if (t >= 64.0 && t < 102.0) {
         float localT = t - 64.0;
-        
+
         // Static grey background
         vec4 greyBg = vec4(0.5, 0.5, 0.5, 1.0);
         vec4 blackMotion = NoisySmokeFinal(uv, localT);
-        
+
         // Progressive introduction of black movements
         float movementIntensity = 0.0;
-        
-        // Sync with sine-wave sounds
-        if (localT >= 14.0 && localT < 18.0) { // 1:18–1:22
-            movementIntensity = smoothstep(14.0, 15.0, localT) * (1.0 - smoothstep(17.0, 18.0, localT));
-        } else if (localT >= 20.0 && localT < 23.0) { // 1:24–1:27
-            movementIntensity = smoothstep(20.0, 21.0, localT) * (1.0 - smoothstep(22.0, 23.0, localT));
-        } else if (localT >= 24.0) { // 1:28–1:42
-            movementIntensity = smoothstep(24.0, 38.0, localT); // Gradual fill
+
+        // Sync with audio onsets
+        if ((localT >= 14.0 && localT < 18.0) ||  // 1:18–1:22
+            (localT >= 20.0 && localT < 23.0) ||  // 1:24–1:27
+            (localT >= 24.0 && localT < 38.0)) {  // 1:28–1:42
+            movementIntensity = smoothstep(0.0, 1.0, fract(localT * 0.5)); // React to audio events
         }
-        
-        fragColor = mix(greyBg, blackMotion, movementIntensity);
+
+        // Subtle visual shifts to match quiet sonic textures
+        vec2 subtleShift = vec2(
+            sin(localT * 0.3) * 0.01, // Horizontal subtle motion
+            cos(localT * 0.2) * 0.01  // Vertical subtle motion
+        );
+        vec2 shiftedUV = uv + subtleShift;
+
+        // Combine grey background and black motion with intensity
+        fragColor = mix(greyBg, NoisySmokeFinal(shiftedUV, localT), movementIntensity);
     }
+    //SECTION 3
     // 1:42 – 2:18 (102-138s): White movements with cross-cuts and blackout
     else if (t >= 102.0 && t < 138.0) {
         float localT = t - 102.0;
@@ -538,9 +549,11 @@ void main() {
             fragColor = vec4(0.0, 0.0, 0.0, 1.0);
         }
         else {
+            // TODO: Cannot sync white movements to sine-wave sounds - PointLineMain controls its own speed
             fragColor = PointLineMain(uv, localT);
         }
     }
+    //SECTION 4
     // 2:18 – 2:48 (138-168s): Gradual zoom with irregular movements
     else if (t >= 138.0 && t < 168.0) {
         float localT = t - 138.0;
@@ -566,6 +579,7 @@ void main() {
         
         fragColor = SmokeMain(zoomedUV, localT + 138.0, 0.02);
     }
+    //SECTION 5
     // 2:48 – End (168s+): Irregular rhythm with distortions and flashes
     else if (t >= 168.0) {
         float localT = t - 168.0;

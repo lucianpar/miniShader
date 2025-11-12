@@ -23,36 +23,47 @@
 
 #include "shader-env/shaderUtility/shaderToSphere.hpp"
 
+
+//USEFUL FOR ANALYZING AUDIO DATA FOR TRANSIENT ONSETS >> https://lucianpar.github.io/onset-detector/
+/* FOR USING THIS FILE:
+* Update file paths for audio and shaders in the USER CONFIGURATION section "SET PATHS HERE"
+* Adjust playback settings in the USER CONTROLS section "USER CONTROLS HERE"
+*/
+
+
+
+
+
 struct Common {};
 class MyApp : public al::DistributedAppWithState<Common> {
 public:
-  // Graphics related
+//USER CONFIGURATION HERE - EDIT PATHS / SETTINGS//
+    //SET PATHS HERE //
+  std::string fragName = "mistMain2.frag";
+  std::string mistFolder = "/../miniShader/mistShaders/";
+  std::string ripeFolder = "/../miniShader/ripeShaders/";
+  std::string audioPath = "/Users/lucian/Desktop/ripeAudio/mist.wav";
+
+  //USER CONTROLS HERE //
+  float STARTING_TIME = 0.0f;
+  float PLAYBACK_SPEED = 10.0f; // doesnt work for audio yet
+   float audioGain = 0.7f;
+
+// END USER CONFIGURATION //
+
+  // Graphics related DONT TOUCH //
   al::FileSelector selector;
   al::SearchPaths searchPaths;
   ShadedSphere shadedSphere;
-    
-
   std::string vertPath;
   std::string fragPath;
-
-  //set paths
-  std::string fragName = "mistMain.frag";
-  std::string mistFolder = "/../miniShader/mistShaders/";
-  std::string ripeFolder = "/../miniShader/ripeShaders/";
-
-  //TIME CONTROLS 
-  float STARTING_TIME = 0.0f;
-  float PLAYBACK_SPEED = 4.0f; // doesnt work for audio yet
+  //
+  // Audio related DONT TOUCH //
+   al::SoundFilePlayer player;
+  // Parameters DONT TOUCH //
   al::Parameter globalTime{"globalTime", "", STARTING_TIME, 0.0, 300.0};
   al::ParameterBool running{"running", "0", true};
   bool printTime = true;
-
-  // Audio related
-  al::SoundFilePlayer player;
- // std::string audioName = "CanyonA4.wav";
-  std::string audioPath = "/Users/lucian/Desktop/ripeAudio/mist.wav";
-  float audioGain = 0.7f;
-
 
 
   void onInit() override {
