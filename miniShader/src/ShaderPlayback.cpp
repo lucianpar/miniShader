@@ -40,9 +40,10 @@ public:
   std::string mistFolder = "/../miniShader/mistShaders/";
   std::string ripeFolder = "/../miniShader/ripeShaders/";
 
-  //time variables
-  float startingTime = 0.0f;
-  al::Parameter globalTime{"globalTime", "", startingTime, 0.0, 300.0};
+  //TIME CONTROLS 
+  float STARTING_TIME = 0.0f;
+  float PLAYBACK_SPEED = 4.0f; // doesnt work for audio yet
+  al::Parameter globalTime{"globalTime", "", STARTING_TIME, 0.0, 300.0};
   al::ParameterBool running{"running", "0", true};
   bool printTime = true;
 
@@ -50,7 +51,7 @@ public:
   al::SoundFilePlayer player;
  // std::string audioName = "CanyonA4.wav";
   std::string audioPath = "/Users/lucian/Desktop/ripeAudio/mist.wav";
-  float audioGain = 0.5f;
+  float audioGain = 0.7f;
 
 
 
@@ -87,7 +88,7 @@ public:
       // Configure audio playback
       player.loop = true;
       player.pause = false; // Start playing immediately
-      player.frame = startingTime * (player.soundFile->sampleRate);
+      player.frame = STARTING_TIME * (player.soundFile->sampleRate);
       
       // Print audio file info
       std::cout << "✓ Audio loaded successfully" << std::endl;
@@ -97,7 +98,7 @@ public:
       std::cout << "  Duration: " << (double)player.soundFile->frameCount / player.soundFile->sampleRate << " seconds" << std::endl;
       
       // Match audio system sample rate to file
-      audioIO().framesPerSecond(player.soundFile->sampleRate);
+      audioIO().framesPerSecond(player.soundFile->sampleRate * PLAYBACK_SPEED);
       std::cout << "  Set system sample rate to: " << player.soundFile->sampleRate << " Hz" << std::endl;
     } else {
       std::cout << "✗ Failed to load audio file: " << audioPath << std::endl;
@@ -118,7 +119,7 @@ public:
   void onAnimate(double dt) override {
     // Graphics animation
     if (running == true) {
-      globalTime = globalTime + dt;
+      globalTime = globalTime + (dt * PLAYBACK_SPEED);
       if (printTime) {
         std::cout << globalTime << std::endl;
       }
