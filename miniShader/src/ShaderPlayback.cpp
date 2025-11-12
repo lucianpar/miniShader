@@ -9,6 +9,7 @@
 #include "al/io/al_File.hpp"
 #include "al/math/al_Random.hpp"
 #include "al/math/al_Vec.hpp"
+#include "al/scene/al_DynamicScene.hpp"
 #include "al/ui/al_ControlGUI.hpp"
 #include "al/ui/al_FileSelector.hpp"
 #include "al/ui/al_Parameter.hpp"
@@ -29,13 +30,19 @@ public:
   al::FileSelector selector;
   al::SearchPaths searchPaths;
   ShadedSphere shadedSphere;
+    
 
   std::string vertPath;
   std::string fragPath;
+
+  //set paths
   std::string fragName = "mistMain.frag";
   std::string mistFolder = "/../miniShader/mistShaders/";
   std::string ripeFolder = "/../miniShader/ripeShaders/";
-  al::Parameter globalTime{"globalTime", "", 0.0, 0.0, 300.0};
+
+  //time variables
+  float startingTime = 0.0f;
+  al::Parameter globalTime{"globalTime", "", startingTime, 0.0, 300.0};
   al::ParameterBool running{"running", "0", true};
   bool printTime = true;
 
@@ -44,6 +51,8 @@ public:
  // std::string audioName = "CanyonA4.wav";
   std::string audioPath = "/Users/lucian/Desktop/ripeAudio/mist.wav";
   float audioGain = 0.5f;
+
+
 
   void onInit() override {
     // Graphics initialization
@@ -78,7 +87,7 @@ public:
       // Configure audio playback
       player.loop = true;
       player.pause = false; // Start playing immediately
-      player.frame = 0;
+      player.frame = startingTime * (player.soundFile->sampleRate);
       
       // Print audio file info
       std::cout << "✓ Audio loaded successfully" << std::endl;
@@ -105,8 +114,7 @@ public:
     shadedSphere.setSphere(15.0, 20);
     shadedSphere.setShaders(vertPath, fragPath);
     shadedSphere.update();
-  }
-
+    }
   void onAnimate(double dt) override {
     // Graphics animation
     if (running == true) {
