@@ -296,17 +296,17 @@ vec4 PointLineShaderHollowMesh(vec2 uv, float t, float rotation, float speed) {
 }
 
 // === MAIN LOGIC ===
-vec4 PointLineMain(vec2 uv, float t) {
+vec4 PointLineMain(vec2 uv, float t, float speed) {
     // primary (foreground) hollow mesh
     vec2 newUV = uv / 2.0; // scale down for more detail
     float rotationA = 0.0;
-    float speedA = 10.0;
+    float speedA = 10.0 * speed; // Apply caller-provided speed multiplier
     vec4 layerA = PointLineShaderHollowMesh(newUV, t, rotationA, speedA);
 
     // secondary (background) hollow mesh offset by 170 degrees for depth
     float rotOffset = 170.0 * 3.14159265359 / 180.0;
     float rotationB = rotOffset;
-    float speedB = 5.2; // slightly different speed for parallax feel
+    float speedB = 5.2 * speed; // Apply caller-provided speed multiplier
     vec4 layerB = PointLineShaderHollowMesh(uv, t, rotationB, speedB);
 
     // composite: background darker and slightly dimmed, foreground on top
@@ -326,8 +326,6 @@ vec4 PointLineMain(vec2 uv, float t) {
 
     return vec4(finalRGB, finalA);
 }
-//end pooint line utilities//
-
 
 // === cell noise utilities ===
 #define r(v,t) { float a = (t)*T, c=cos(a),s=sin(a); v*=mat2(c,s,-s,c); }
@@ -468,7 +466,27 @@ vec4 cellNoiseMain(vec2 uv, float t){
     return finalColor;
 }
 
-//end cell noise utilities//
+// Helper: quick onset lookup (small subset of ranges from mist-onsets.json).
+// Returns true if global time `time` falls inside any onset range.
+bool isOnsetAt(float time) {
+    // compact list of onset ranges relevant to the middle sections (from mist-onsets.json)
+    const int ONSET_COUNT = 8;
+    const vec2 ranges[ONSET_COUNT] = vec2[](
+        vec2( 92.24126984, 105.43020408), // long cluster that overlaps Section 3 start
+        vec2( 99.95410431, 105.92943311),
+        vec2(100.18249433, 104.80326531),
+        vec2(104.33886621, 104.57106576),
+        vec2(117.88770975, 118.61913832),
+        vec2(118.23600907, 118.59591837),
+        vec2(136.71909297, 137.26476190),
+        vec2(139.98149660, 238.50376417)   // long region that begins just after Section 3
+    );
+
+    for (int i = 0; i < ONSET_COUNT; ++i) {
+        if (time >= ranges[i].x && time <= ranges[i].y) return true;
+    }
+    return false;
+}
 
 // === MAIN ===
 void main() {
@@ -479,25 +497,33 @@ void main() {
 
     // 0:00 – 1:04 (64s): Smoke with gradual acceleration
     if (t >= 0.0 && t < 64.0) {
+        // We'll build the zoom as cumulative decreases so each phase continues
+        // smoothly from the previous one (no jumps at 28s or 58s).
         float zoom = 1.0;
-        float speedMult = 0.015;
-        
+
+        // cumulative decreases
+        float dec1 = smoothstep(0.0, 28.0, t) * 0.4;          // 0 -> 28s: up to -0.4
+        float dec2 = smoothstep(28.0, 58.0, t) * 0.2;         // 28 -> 58s: additional -0.2
+        float dec3 = smoothstep(58.0, 64.0, t) * 0.3;         // 58 -> 64s: final quick -0.3
+
+        zoom = zoom - dec1 - dec2 - dec3;
+        zoom = clamp(zoom, 0.05, 1.0);
+
+        // speed multiplier: continuous ramps between the same phase boundaries
+        float speedMult = 0.005; // base very slow
+
         if (t < 28.0) {
-            // Very slow movement (0:00 - 0:28)
-            zoom = 1.0 - smoothstep(0.0, 28.0, t) * 0.4; // Very subtle zoom
-            speedMult = 0.005; // Very slow movement
+            speedMult = 0.005; // Very slow movement (0:00 - 0:28)
         } else if (t < 58.0) {
             // Gradually accelerate (0:28 - 0:58)
-            float phase = (t - 28.0) / 30.0; // 0 to 1
-            zoom = 1.0 - smoothstep(28.0, 58.0, t) * 0.2; // Continue zoom
-            speedMult = mix(0.005, 0.03, smoothstep(0.0, 1.0, phase)); // Accelerate
+            float phase = (t - 28.0) / 30.0; // 0 -> 1
+            speedMult = mix(0.005, 0.03, smoothstep(0.0, 1.0, phase));
         } else {
             // Fast and intense (0:58 - 1:04)
-            float phase = (t - 58.0) / 6.0; // 0 to 1
-            zoom = 1.0 - 0.20 - smoothstep(0.0, 1.0, phase) * 0.30; // Rapid zoom
-            speedMult = mix(0.03, 0.08, smoothstep(0.0, 1.0, phase)); // Very fast
+            float phase = (t - 58.0) / 6.0; // 0 -> 1
+            speedMult = mix(0.03, 0.08, smoothstep(0.0, 1.0, phase));
         }
-        
+
         vec2 zoomedUV = uv * zoom;
         fragColor = SmokeMain(zoomedUV, t, speedMult);
     }
@@ -549,8 +575,11 @@ void main() {
             fragColor = vec4(0.0, 0.0, 0.0, 1.0);
         }
         else {
-            // TODO: Cannot sync white movements to sine-wave sounds - PointLineMain controls its own speed
-            fragColor = PointLineMain(uv, localT);
+            // Determine speed from onset events: when there's an onset -> use default (1.0),
+            // otherwise run very slowly (0.1).
+            // isOnsetAt expects a global time, so pass `t` (u_time).
+            float eventSpeed = isOnsetAt(t) ? 1.0 : 0.1;
+            fragColor = PointLineMain(uv, localT, eventSpeed);
         }
     }
     //SECTION 4
