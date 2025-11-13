@@ -488,6 +488,25 @@ bool isOnsetAt(float time) {
     return false;
 }
 
+// Helper: onset lookup specifically for Section 4 (global time).
+// Returns true if global time `time` falls inside any onset range relevant to Section 4.
+bool isOnsetSection4(float time) {
+    // Ranges taken from mist-onsets.json that intersect Section 4 (138-168s).
+    const int ONSET4_COUNT = 5;
+    const vec2 ranges[ONSET4_COUNT] = vec2[](
+        vec2(139.98149660, 238.50376417), // long region that covers 140s+
+        vec2(140.35301587, 140.63165533),
+        vec2(156.03809524, 160.42666667),
+        vec2(162.13333333, 162.42358277),
+        vec2(163.73551020, 175.78666667)  // overlaps end of Section 4 (163.7.. -> >168)
+    );
+
+    for (int i = 0; i < ONSET4_COUNT; ++i) {
+        if (time >= ranges[i].x && time <= ranges[i].y) return true;
+    }
+    return false;
+}
+
 // === MAIN ===
 void main() {
     vec2 uv = vPos.xy / 10.0;
@@ -586,26 +605,32 @@ void main() {
     // 2:18 – 2:48 (138-168s): Gradual zoom with irregular movements
     else if (t >= 138.0 && t < 168.0) {
         float localT = t - 138.0;
-        
+
         // Gradual zoom-in with smooth interpolation
         float zoomProgress = localT / 30.0;
         float zoom = 1.0 - smoothstep(0.0, 1.0, zoomProgress) * 0.3;
-        
-        // Irregular movement (different speeds for x and y)
+
+        // Audio-reactive onset for Section 4: when an onset is active, use full motion;
+        // otherwise run very slowly.
+        bool onset = isOnsetSection4(t); // pass global time
+        float ampFactor  = onset ? 1.0 : 0.08;  // amplitude multiplier (small when idle)
+        float freqFactor = onset ? 1.0 : 0.25;  // frequency multiplier (slower when idle)
+
+        // Irregular movement (different speeds for x and y), now audio-reactive
         vec2 offset = vec2(
-            sin(localT * 0.7) * 0.02,
-            cos(localT * 0.5) * 0.015
+            sin(localT * 0.7 * freqFactor) * 0.02 * ampFactor,
+            cos(localT * 0.5 * freqFactor) * 0.015 * ampFactor
         );
-        
+
         vec2 zoomedUV = (uv + offset) * zoom;
-        
+
         // Extreme zoom-in at 2:48 (end of section)
         if (localT >= 28.0) {
             float extremeZoom = smoothstep(28.0, 30.0, localT);
             zoom = mix(zoom, 0.3, extremeZoom); // Black hole effect
             zoomedUV = uv * zoom;
         }
-        
+
         fragColor = SmokeMain(zoomedUV, localT + 138.0, 0.02);
     }
     //SECTION 5
