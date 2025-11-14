@@ -507,6 +507,33 @@ bool isOnsetSection4(float time) {
     return false;
 }
 
+// Helper: onset lookup specifically for Section 2 (global time).
+// Uses ranges from mist-onsets.json that overlap Section 2 (64-102s).
+bool isOnsetSection2(float time) {
+    const int ONSET2_COUNT = 14;
+    const vec2 ranges[ONSET2_COUNT] = vec2[](
+        vec2(65.68925170, 65.93306122),
+        vec2(70.34485261, 70.86730159),
+        vec2(71.87736961, 71.95863946),
+        vec2(72.73650794, 73.65369615),
+        vec2(74.08326531, 74.61732426),
+        vec2(75.54612245, 128.02321995),   // long cluster starting in section
+        vec2(76.05696145, 113.38303855),
+        vec2(80.29460317, 82.62820862),
+        vec2(83.75437642, 85.20562358),
+        vec2(86.08798186, 108.10049887),
+        vec2(89.95410431, 105.92943311),
+        vec2(92.24126984, 105.43020408),
+        vec2(99.55555556, 104.95419501),
+        vec2(100.18249433, 104.80326531)
+    );
+
+    for (int i = 0; i < ONSET2_COUNT; ++i) {
+        if (time >= ranges[i].x && time <= ranges[i].y) return true;
+    }
+    return false;
+}
+
 // === MAIN ===
 void main() {
     vec2 uv = vPos.xy / 10.0;
@@ -515,7 +542,7 @@ void main() {
     //SECTION 1
 
     // 0:00 – 1:04 (64s): Smoke with gradual acceleration
-    if (t >= 0.0 && t < 64.0) {
+    if (t >= 0.0 && t < 66.0) {
         // We'll build the zoom as cumulative decreases so each phase continues
         // smoothly from the previous one (no jumps at 28s or 58s).
         float zoom = 1.0;
@@ -546,27 +573,19 @@ void main() {
         vec2 zoomedUV = uv * zoom;
         fragColor = SmokeMain(zoomedUV, t, speedMult);
     }
-
-    //SECTION 2
+    // SECTION 2
     // 1:04 – 1:42 (64-102s): Grey background with progressive black movements
-    else if (t >= 64.0 && t < 102.0) {
-        float localT = t - 64.0;
+    else if (t >= 66.0 && t < 102.0) {
+        float localT = t - 66.0;
 
         // Static grey background
         vec4 greyBg = vec4(0.5, 0.5, 0.5, 1.0);
-        vec4 blackMotion = NoisySmokeFinal(uv, localT);
 
-        // Progressive introduction of black movements
-        float movementIntensity = 0.0;
+        // Immediate reaction to onsets: set full movement when an onset is active.
+        // Use the global time `t` to test against the JSON ranges.
+        float movementIntensity = isOnsetSection2(t) ? 1.0 : 0.0;
 
-        // Sync with audio onsets
-        if ((localT >= 14.0 && localT < 18.0) ||  // 1:18–1:22
-            (localT >= 20.0 && localT < 23.0) ||  // 1:24–1:27
-            (localT >= 24.0 && localT < 38.0)) {  // 1:28–1:42
-            movementIntensity = smoothstep(0.0, 1.0, fract(localT * 0.5)); // React to audio events
-        }
-
-        // Subtle visual shifts to match quiet sonic textures
+        // Subtle visual shifts to match quiet sonic textures when not triggered
         vec2 subtleShift = vec2(
             sin(localT * 0.3) * 0.01, // Horizontal subtle motion
             cos(localT * 0.2) * 0.01  // Vertical subtle motion
@@ -578,8 +597,8 @@ void main() {
     }
     //SECTION 3
     // 1:42 – 2:18 (102-138s): White movements with cross-cuts and blackout
-    else if (t >= 102.0 && t < 138.0) {
-        float localT = t - 102.0;
+    else if (t >= 104.5 && t < 138.0) {
+        float localT = t - 104.5;
         
         // White cross-cuts at 1:55–1:56 (13-14s) and 2:13–2:14 (31-32s)
         if ((localT >= 13.0 && localT < 14.0) || (localT >= 31.0 && localT < 32.0)) {
@@ -602,8 +621,8 @@ void main() {
         }
     }
     //SECTION 4
-    // 2:18 – 2:48 (138-168s): Gradual zoom with irregular movements
-    else if (t >= 138.0 && t < 168.0) {
+    // 2:18 – 2:48 (138-170s): Gradual zoom with irregular movements
+    else if (t >= 138.0 && t < 170.0) {
         float localT = t - 138.0;
 
         // Gradual zoom-in with smooth interpolation
@@ -625,8 +644,8 @@ void main() {
         vec2 zoomedUV = (uv + offset) * zoom;
 
         // Extreme zoom-in at 2:48 (end of section)
-        if (localT >= 28.0) {
-            float extremeZoom = smoothstep(28.0, 30.0, localT);
+        if (localT >= 30.0) {
+            float extremeZoom = smoothstep(28.0, 33.0, localT);
             zoom = mix(zoom, 0.3, extremeZoom); // Black hole effect
             zoomedUV = uv * zoom;
         }
@@ -635,8 +654,8 @@ void main() {
     }
     //SECTION 5
     // 2:48 – End (168s+): Irregular rhythm with distortions and flashes
-    else if (t >= 168.0) {
-        float localT = t - 168.0;
+    else if (t >= 170.0) {
+        float localT = t - 170.0;
         
         // Gradual zoom-in with smooth interpolation
         float zoomProgress = localT / 60.0;
@@ -678,8 +697,8 @@ void main() {
         // Apply smooth distortion
         if (distortion > 0.0) {
             vec2 distortUV = zoomedUV + vec2(
-                sin(localT * 20.0 + zoomedUV.y * 10.0) * distortion,
-                cos(localT * 15.0 + zoomedUV.x * 10.0) * distortion
+                sin(localT * 2.0 + zoomedUV.y * 10.0) * distortion,
+                cos(localT * 3.0 + zoomedUV.x * 10.0) * distortion
             );
             zoomedUV = distortUV;
         }

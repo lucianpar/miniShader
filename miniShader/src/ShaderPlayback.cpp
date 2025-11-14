@@ -45,7 +45,7 @@ public:
   std::string audioPath = "/Users/lucian/Desktop/ripeAudio/mist.wav";
 
   //USER CONTROLS HERE //
-  float STARTING_TIME = 0.0f;
+  float STARTING_TIME = 165.0f;
   float PLAYBACK_SPEED = 1.0f; // doesnt work for audio yet
    float audioGain = 0.7f;
 
