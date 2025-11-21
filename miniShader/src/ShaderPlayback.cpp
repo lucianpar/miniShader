@@ -39,15 +39,15 @@ class MyApp : public al::DistributedAppWithState<Common> {
 public:
 //USER CONFIGURATION HERE - EDIT PATHS / SETTINGS//
     //SET PATHS HERE //
-  std::string fragName = "mistMain2.frag";
+  std::string fragName = "mistMainFinal.frag";
   std::string mistFolder = "/../miniShader/mistShaders/";
   std::string ripeFolder = "/../miniShader/ripeShaders/";
   std::string audioPath = "/Users/lucian/Desktop/ripeAudio/mist.wav";
 
   //USER CONTROLS HERE //
-  float STARTING_TIME = 165.0f;
-  float PLAYBACK_SPEED = 1.0f; // doesnt work for audio yet
-   float audioGain = 0.7f;
+  float STARTING_TIME = 0.0f;
+  float PLAYBACK_SPEED = 20.0f; // doesnt work for audio yet
+   float audioGain = 1.0f;
 
 // END USER CONFIGURATION //
 
