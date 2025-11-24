@@ -545,205 +545,162 @@ void main() {
     vec2 uv = vPos.xy / 10.0;
     float t = u_time;
 
-    //SECTION 1
-
-    // 0:00 – 1:04 (64s): Smoke with gradual acceleration
-    if (t >= 0.0 && t < 66.0) {
-        // We'll build the zoom as cumulative decreases so each phase continues
-        // smoothly from the previous one (no jumps at 28s or 58s).
+    //SECTION 1: 0:00 – 1:04 (0-64s)
+    // Slower fade-in, continuous speed-up aligned to percussive at 1:02
+    if (t >= 0.0 && t < 64.0) {
         float zoom = 1.0;
 
-        // cumulative decreases
-        float dec1 = smoothstep(0.0, 28.0, t) * 0.4;          // 0 -> 28s: up to -0.4
-        float dec2 = smoothstep(28.0, 58.0, t) * 0.2;         // 28 -> 58s: additional -0.2
-        float dec3 = smoothstep(58.0, 64.0, t) * 0.3;         // 58 -> 64s: final quick -0.3
-
+        // Cumulative zoom decreases (same as before)
+        float dec1 = smoothstep(0.0, 28.0, t) * 0.4;
+        float dec2 = smoothstep(28.0, 58.0, t) * 0.2;
+        float dec3 = smoothstep(58.0, 64.0, t) * 0.3;
         zoom = zoom - dec1 - dec2 - dec3;
         zoom = clamp(zoom, 0.05, 1.0);
 
-        // speed multiplier: continuous ramps between the same phase boundaries
+        // UPDATED: Continuous speed-up from 0:57 (57s) to 1:02 (62s) for percussive alignment
         float speedMult = 0.005; // base very slow
-
-        if (t < 28.0) {
-            speedMult = 0.005; // Very slow movement (0:00 - 0:28)
-        } else if (t < 58.0) {
-            // Gradually accelerate (0:28 - 0:58)
-            float phase = (t - 28.0) / 30.0; // 0 -> 1
-            speedMult = mix(0.005, 0.03, smoothstep(0.0, 1.0, phase));
+        
+        if (t < 57.0) {
+            speedMult = 0.005; // Very slow movement (0:00 - 0:57)
         } else {
-            // Fast and intense (0:58 - 1:04)
-            float phase = (t - 58.0) / 6.0; // 0 -> 1
-            speedMult = mix(0.03, 0.08, smoothstep(0.0, 1.0, phase));
+            // Continuous acceleration from 0:57 to 1:04 (percussive at 1:02)
+            float phase = (t - 57.0) / 7.0; // 0 -> 1 over 7 seconds
+            speedMult = mix(0.005, 0.1, smoothstep(0.0, 1.0, phase)); // Faster end speed for impact
         }
 
         vec2 zoomedUV = uv * zoom;
         fragColor = SmokeMain(zoomedUV, t, speedMult);
     }
-    // SECTION 2
-    // 1:04 – 1:42 (64-102s): Grey background with progressive black movements
-    else if (t >= 66.0 && t < 104.5) {
-        float localT = t - 66.0;
+    
+    // SECTION 2: 1:04 – 1:42 (64-104s)
+    // Grey background blended in until 82s, then pure NoisySmokeFinal
+    else if (t >= 64.0 && t < 104.0) {
+        float localT = t - 64.0;
 
         // Static grey background
         vec4 greyBg = vec4(0.5, 0.5, 0.5, 1.0);
 
-        // Immediate reaction to onsets: set full movement when an onset is active.
-        // Use the global time `t` to test against the JSON ranges.
-        float movementIntensity = isOnsetSection2(t) ? 1.0 : 0.0;
-
-        // Subtle visual shifts to match quiet sonic textures when not triggered
+        // Subtle global shift (always present)
         vec2 subtleShift = vec2(
-            sin(localT * 0.3) * 0.01, // Horizontal subtle motion
-            cos(localT * 0.2) * 0.01  // Vertical subtle motion
+            sin(localT * 0.3) * 0.01,
+            cos(localT * 0.2) * 0.01
         );
         vec2 shiftedUV = uv + subtleShift;
 
-        // Combine grey background and black motion with intensity
-        fragColor = mix(greyBg, NoisySmokeFinal(shiftedUV, localT), movementIntensity);
+        // Noisy layer (reactive)
+        vec4 noisyLayer = NoisySmokeFinal(shiftedUV, localT);
+
+        // Blend grey -> noisy between t=64 (1:04) and t=82 (1:22)
+        if (t < 82.0) {
+            float blendT = smoothstep(64.0, 82.0, t); // 0 at 64s, 1 at 82s
+            fragColor = mix(greyBg, noisyLayer, blendT);
+        } else {
+            // After 82s, just the noisy layer
+            fragColor = noisyLayer;
+        }
     }
-    //SECTION 3
-    // 1:42 – 2:18 (102-138s): White movements with cross-cuts and blackout
-    else if (t >= 104.5 && t < 141.0) {
-        float localT = t - 104.5;
-        
-        // White cross-cuts at 1:55–1:56 (13-14s) and 2:13–2:14 (31-32s)
-        if ((localT >= 13.0 && localT < 14.0) || (localT >= 31.0 && localT < 32.0)) {
-            fragColor = vec4(1.0, 1.0, 1.0, 1.0);
-        }
-        // White still image during silence 2:14–2:17 (32-35s)
-        else if (localT >= 32.0 && localT < 35.0) {
-            fragColor = vec4(1.0, 1.0, 1.0, 1.0);
-        }
-        // Blackout at 2:17–2:18 (35-36s)
-        else if (localT >= 35.0 && localT < 39.0) {
+    
+    // SECTION 3: 1:42 – 2:19 (102-139s)
+    // UPDATED: Remove white-screen cuts, keep black background with white elements
+    // Only sudden-black at 2:19
+    else if (t >= 104.0 && t < 140.2) {
+        float localT = t - 104.0;
+
+        // Sudden blackout at 2:19 (localT 35s = 2:19 global)
+        if (localT >= 33.0) {
             fragColor = vec4(0.0, 0.0, 0.0, 1.0);
         }
         else {
-            // Determine speed from onset events: when there's an onset -> use default (1.0),
-            // otherwise run very slowly (0.1).
-            // isOnsetAt expects a global time, so pass `t` (u_time).
+            // White elements on black background
             float eventSpeed = isOnsetAt(t) ? 1.0 : 0.1;
             fragColor = PointLineMain(uv, localT, eventSpeed);
         }
     }
-    //SECTION 4
-    // 2:18 – 2:48 (138-170s): Gradual zoom with irregular movements
-    else if (t >= 141.0 && t < 170.0) {
-        float localT = t - 138.0;
+    
+    // SECTION 4: 2:20 – 2:49 (140-169s)
+    // UPDATED: More dynamic mist motion, delayed zoom, white at end, different seed
+    else if (t >= 140.2 && t < 170.0) {
+        float localT = t - 140.2;
 
-        // Gradual zoom-in with smooth interpolation
-        float zoomProgress = localT / 30.0;
-        float zoom = 1.0 - smoothstep(0.0, 1.0, zoomProgress) * 0.3;
+        // UPDATED: Delayed zoom-in to align with musical transition
+        // Start zoom later (at localT 5s instead of 0s)
+        float zoomProgress = clamp((localT - 5.0) / 24.0, 0.0, 1.0); // Delayed by 5s
+        float zoom = 1.0 - smoothstep(0.0, 1.0, zoomProgress) * 0.7; // Zoom in more (like Section 1)
 
-        // Audio-reactive onset for Section 4: when an onset is active, use full motion;
-        // otherwise run very slowly.
-        bool onset = isOnsetSection4(t); // pass global time
-        float ampFactor  = onset ? 1.0 : 0.08;  // amplitude multiplier (small when idle)
-        float freqFactor = onset ? 1.0 : 0.25;  // frequency multiplier (slower when idle)
+        // More dynamic mist motion
+        bool onset = isOnsetSection4(t);
+        float ampFactor  = onset ? 1.5 : 0.1;  // INCREASED for more dynamic motion
+        float freqFactor = onset ? 1.2 : 0.3;  // INCREASED for more dynamic motion
 
-        // Irregular movement (different speeds for x and y), now audio-reactive
         vec2 offset = vec2(
-            sin(localT * 0.7 * freqFactor) * 0.02 * ampFactor,
-            cos(localT * 0.5 * freqFactor) * 0.015 * ampFactor
+            sin(localT * 0.7 * freqFactor) * 0.03 * ampFactor, // Increased amplitude
+            cos(localT * 0.5 * freqFactor) * 0.02 * ampFactor
         );
 
-        vec2 zoomedUV = (uv + offset) * zoom;
+        vec2 zoomedUV = (uv + offset) * zoom / 2.0;
 
-        // Extreme zoom-in at 2:48 (end of section)
-        if (localT >= 30.0) {
-            float extremeZoom = smoothstep(30.0, 33.5, localT);
-            zoom = mix(zoom, 0.1, extremeZoom * 1.6); // Black hole effect
-            zoomedUV = uv * zoom;
+        // UPDATED: Bright white at 2:49 (end of section at localT 29)
+        if (localT >= 28.5) {
+            float toWhite = smoothstep(28.5, 30.0, localT);
+            vec4 mistCol = SmokeMain(zoomedUV, localT + 200.0, 0.03); // CHANGED SEED (+200 instead of +140)
+            fragColor = mix(mistCol, vec4(1.0, 1.0, 1.0, 1.0), toWhite);
+        } else {
+            fragColor = SmokeMain(zoomedUV, localT + 200.0, 0.03); // Different seed
         }
-
-        fragColor = SmokeMain(zoomedUV, localT + 138.0, 0.02);
     }
-    //SECTION 5
-    // 2:48 – End (168s+): Irregular rhythm with distortions and flashes
+    
+    // SECTION 5: 2:49 – End (170s+)
+    // Smooth zoom progression with fade-out
     else if (t >= 170.0) {
         float localT = t - 170.0;
 
-        // Base gradual zoom for the whole section (subtle)
+        // Transition from Section 4's white
+        float fromWhite = 1.0 - smoothstep(0.0, 2.0, localT);
+
+        // Base gradual zoom
         float zoomProgress = localT / 60.0;
         float baseZoom = 1.0 - smoothstep(0.0, 1.0, zoomProgress) * 0.4;
 
-        // Smooth transition from Section 4 end state to avoid jump
-        // Section 4 ends with no offset and zoom=0.7 at t=168
-        vec2 initialOffset = vec2(0.0);  // Corrected: matches Section 4's end (no offset applied)
-        float initialZoom = 0.7;         // Matches Section 4's zoom at localT=30
+        vec2 initialOffset = vec2(0.0);
+        float initialZoom = 0.5; // Match Section 4's end zoom
 
-        float transition = smoothstep(0.0, 5.0, localT);  // Extended to 5 seconds for smoother blend
+        float transition = smoothstep(0.0, 3.0, localT);
         vec2 offset = mix(initialOffset, vec2(0.0), transition);
         float zoom = mix(initialZoom, baseZoom, transition);
 
         vec2 zoomedUV = (uv + offset) * zoom;
 
-        // --- Cell noise: zoom out over the whole section ---
+        // Cell noise zoom - continuous progression throughout entire section
         float cellStartMult = 7.0;
-        float cellEndMult   = 1.0;
+        float cellEndMult   = 0.5;  // Zoom further (instead of stopping at 1.0)
+        float cellMult = mix(cellStartMult, cellEndMult, clamp(localT / 75.0, 0.0, 1.0));  // Continue to 75s (fadeEnd)
 
-        // when smoke should be fully covering (localT)
-        float sectionToSmoke = 72.0;
-
-        // Smoothly interpolate the cell multiplier until smoke takeover
-        float cellMult = mix(cellStartMult, cellEndMult, smoothstep(0.0, sectionToSmoke, localT));
         vec2 cellUV = zoomedUV * cellMult;
 
-        // --- Smoke overlay fade ---
-        float smokeAlpha = clamp(localT / sectionToSmoke, 0.0, 1.0);
-        smokeAlpha = smoothstep(0.0, 1.0, smokeAlpha);
-
-        // --- Smoke zoom-in (slower than noisy cell zoom) ---
-        float smokeStartMult = 1.0;
-        float smokeEndMult   = 0.8;
-        float smokeLerp = pow(smoothstep(0.0, sectionToSmoke, localT), 1.4);
-        float smokeMult = mix(smokeStartMult, smokeEndMult, smokeLerp);
-        // DOUBLE the effective smoke zoom (per your request)
-        vec2 smokeUV = uv * smokeMult * baseZoom * 0.7;
-
-        // --- Hit groups (small/medium/large) with per-hit envelopes ---
-        // Small hits (short): small -> 2x
+        // Hit groups with envelopes
         const int SMALL_COUNT = 9;
         const vec2 smallRanges[SMALL_COUNT] = vec2[](
-            vec2(2.0, 2.2),
-            vec2(4.0, 4.2),
-            vec2(6.0, 6.2),
-            vec2(10.0, 10.2),
-            vec2(12.0, 12.2),
-            vec2(17.0, 17.2),
-            vec2(19.0, 19.2),
-            vec2(23.0, 23.2),
-            vec2(25.0, 25.2)
+            vec2(2.0, 2.2), vec2(4.0, 4.2), vec2(6.0, 6.2),
+            vec2(10.0, 10.2), vec2(12.0, 12.2), vec2(17.0, 17.2),
+            vec2(19.0, 19.2), vec2(23.0, 23.2), vec2(25.0, 25.2)
         );
-        // Medium hits: medium -> 3x
         const int MED_COUNT = 4;
         const vec2 medRanges[MED_COUNT] = vec2[](
-            vec2(7.0, 8.0),
-            vec2(13.0, 15.0),
-            vec2(20.0, 22.0),
-            vec2(27.0, 29.0)
+            vec2(7.0, 8.0), vec2(13.0, 15.0),
+            vec2(20.0, 22.0), vec2(27.0, 29.0)
         );
-        // Large hits: large -> 4x
         const int LARGE_COUNT = 3;
         const vec2 largeRanges[LARGE_COUNT] = vec2[](
-            vec2(33.0, 36.0),
-            vec2(40.0, 44.0),
-            vec2(48.0, 55.0)
+            vec2(33.0, 36.0), vec2(40.0, 44.0), vec2(48.0, 55.0)
         );
 
-        // per-group attack/release (seconds)
-        float atkSmall = 0.02;
-        float relSmall = 0.08;
-        float atkMed   = 0.10;
-        float relMed   = 0.20;
-        float atkLarge = 0.25;
-        float relLarge = 0.50;
+        float atkSmall = 0.02, relSmall = 0.08;
+        float atkMed   = 0.10, relMed   = 0.20;
+        float atkLarge = 0.25, relLarge = 0.50;
 
-        // compute envelope (0..1) for each group: ramp in around start, ramp out around end
         float smallEnv = 0.0;
         for (int i = 0; i < SMALL_COUNT; ++i) {
-            float rs = smallRanges[i].x;
-            float re = smallRanges[i].y;
+            float rs = smallRanges[i].x, re = smallRanges[i].y;
             float inE  = smoothstep(rs - atkSmall, rs + atkSmall, localT);
             float outE = 1.0 - smoothstep(re - relSmall, re + relSmall, localT);
             smallEnv = max(smallEnv, inE * outE);
@@ -751,8 +708,7 @@ void main() {
 
         float medEnv = 0.0;
         for (int i = 0; i < MED_COUNT; ++i) {
-            float rs = medRanges[i].x;
-            float re = medRanges[i].y;
+            float rs = medRanges[i].x, re = medRanges[i].y;
             float inE  = smoothstep(rs - atkMed, rs + atkMed, localT);
             float outE = 1.0 - smoothstep(re - relMed, re + relMed, localT);
             medEnv = max(medEnv, inE * outE);
@@ -760,58 +716,37 @@ void main() {
 
         float largeEnv = 0.0;
         for (int i = 0; i < LARGE_COUNT; ++i) {
-            float rs = largeRanges[i].x;
-            float re = largeRanges[i].y;
+            float rs = largeRanges[i].x, re = largeRanges[i].y;
             float inE  = smoothstep(rs - atkLarge, rs + atkLarge, localT);
             float outE = 1.0 - smoothstep(re - relLarge, re + relLarge, localT);
             largeEnv = max(largeEnv, inE * outE);
         }
 
-        // --- Cell speed control with group-dependent boosts and smooth envelopes ---
-        // default half speed, group-target multipliers:
-        float cellDefaultSpeed = 0.5;             // 0.5x base
-        float smallTargetMult  = 2.0;             // small -> 2x
-        float medTargetMult    = 3.0;             // medium -> 3x
-        float largeTargetMult  = 4.0;             // large -> 4x
+        // Normal speed control with hit envelopes
+        float cellDefaultSpeed = 0.5;
+        float smallTargetMult  = 2.0;
+        float medTargetMult    = 3.0;
+        float largeTargetMult  = 4.0;
 
-        // interpolate per-group (mix between 1.0 and targetMult by the envelope)
         float speedSmall = cellDefaultSpeed * mix(1.0, smallTargetMult, smallEnv);
         float speedMed   = cellDefaultSpeed * mix(1.0, medTargetMult,   medEnv);
         float speedLarge = cellDefaultSpeed * mix(1.0, largeTargetMult, largeEnv);
 
-        // pick the strongest (max) so overlapping hits choose the most intense effect
         float cellSpeed = max(max(speedSmall, speedMed), speedLarge);
 
-        // White cross-cut flashes only while smoke hasn't fully taken over
-        bool isFlash = false;
-        if (localT < (sectionToSmoke - 12.0)) {
-            if (localT >= 56.0 && localT < sectionToSmoke) {
-                float flashCycle = mod(localT - 56.0, 2.0);
-                if (flashCycle < 0.1) isFlash = true;
-            }
-        }
+        // Sample cell noise
+        vec4 cellCol = cellNoiseMain(cellUV, localT, cellSpeed);
 
-        if (isFlash) {
-            fragColor = vec4(1.0, 1.0, 1.0, 1.0);
-        } else {
-            // Sample layers (cell layer time scaled by cellSpeed)
-            vec4 cellCol  = cellNoiseMain(cellUV, localT, cellSpeed);             // cell noise with ramped speed
-            vec4 smokeCol = SmokeMain(smokeUV, localT + 168.0, 0.02);             // smoke overlay (zooming in more)
+        // Gradual fade-out starting at 57.5s (3:49), ending at 75s
+        float fadeStart = 57.5;
+        float fadeEnd = 75.0;
+        float fadeOutAlpha = 1.0 - smoothstep(fadeStart, fadeEnd, localT);
 
-            // Composite: blend cell noise with smoke overlay using smokeAlpha.
-            vec3 mixedRGB = mix(cellCol.rgb, smokeCol.rgb, smokeAlpha);
-            float mixedA  = mix(cellCol.a, smokeCol.a, smokeAlpha);
+        // Apply white transition at start, then fade out at end
+        vec3 finalRGB = mix(cellCol.rgb, vec3(1.0), fromWhite);
+        finalRGB *= fadeOutAlpha;
+        float finalA = cellCol.a * fadeOutAlpha;
 
-            // Fade to black (earlier start as requested previously)
-            float fadeStart = 70.0;   // localT -> 168 + 70 = 238s (3:58)
-            float fadeDur   = 4.0;    // ends at 242s (4:02)
-            if (localT >= fadeStart) {
-                float fadeToBlack = clamp((localT - fadeStart) / fadeDur, 0.0, 1.0);
-                mixedRGB = mix(mixedRGB, vec3(0.0), fadeToBlack);
-                mixedA   = mix(mixedA,   1.0,    fadeToBlack);
-            }
-
-            fragColor = vec4(mixedRGB, mixedA);
-        }
+        fragColor = vec4(finalRGB, finalA);
     }
 }

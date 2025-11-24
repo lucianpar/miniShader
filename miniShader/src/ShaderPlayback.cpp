@@ -46,7 +46,7 @@ public:
 
   //USER CONTROLS HERE //
   float STARTING_TIME = 0.0f;
-  float PLAYBACK_SPEED = 20.0f; // doesnt work for audio yet
+  float PLAYBACK_SPEED = 1.0f; // doesnt work for audio yet
    float audioGain = 1.0f;
 
 // END USER CONFIGURATION //
