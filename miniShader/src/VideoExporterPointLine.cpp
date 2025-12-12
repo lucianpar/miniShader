@@ -21,13 +21,13 @@
  * Requirements: FFmpeg installed (brew install ffmpeg)
  */
 
-class VideoExporter : public al::App {
+class VideoExporterPointLine : public al::App {
 public:
   // USER CONFIGURATION //
-  std::string fragName = "Smoke.frag";
+  std::string fragName = "PointLine.frag";
   std::string mistFolder = "miniShader/mistShaders/";
   std::string fragFolder = "miniShader/mistShaders/referenceFrags/";
-  std::string outputVideoPath = "smoke_export.mp4";
+  std::string outputVideoPath = "pointline_export.mp4";
   
   // Video settings
   const int VIDEO_WIDTH = 1920;   // 1080p width
@@ -270,7 +270,7 @@ public:
 };
 
 int main() {
-  VideoExporter app;
+  VideoExporterPointLine app;
   app.dimensions(0, 0, 3840, 2160);  // 4K resolution
   app.decorated(false);  // No window decorations needed
   app.start();

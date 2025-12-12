@@ -39,15 +39,16 @@ class MyApp : public al::DistributedAppWithState<Common> {
 public:
 //USER CONFIGURATION HERE - EDIT PATHS / SETTINGS//
     //SET PATHS HERE //
-  std::string fragName = "mistMainFinal.frag";
+  std::string fragName = "drowning.frag";
   std::string mistFolder = "/../miniShader/mistShaders/";
   std::string ripeFolder = "/../miniShader/ripeShaders/";
+  std::string otherFolder = "/../miniShader/otherShaders/";
   std::string audioPath = "/Users/lucian/Desktop/ripeAudio/mist.wav";
 
   //USER CONTROLS HERE //
   float STARTING_TIME = 0.0f;
   float PLAYBACK_SPEED = 1.0f; // doesnt work for audio yet
-   float audioGain = 1.0f;
+   float audioGain = 0.0f;
 
 // END USER CONFIGURATION //
 
@@ -63,12 +64,12 @@ public:
   // Parameters DONT TOUCH //
   al::Parameter globalTime{"globalTime", "", STARTING_TIME, 0.0, 300.0};
   al::ParameterBool running{"running", "0", true};
-  bool printTime = true;
+  bool printTime = false;
 
 
   void onInit() override {
     // Graphics initialization
-    searchPaths.addSearchPath(al::File::currentPath() + mistFolder);
+    searchPaths.addSearchPath(al::File::currentPath() + ripeFolder);
 
     al::FilePath vertPathSource = searchPaths.find("standard.vert");
     if (vertPathSource.valid()) {
