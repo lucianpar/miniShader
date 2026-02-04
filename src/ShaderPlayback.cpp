@@ -21,7 +21,7 @@
 #include <type_traits>
 #include "al/sound/al_SoundFile.hpp"
 
-#include "shader-env/shaderUtility/shaderToSphere.hpp"
+#include "../shaderUtility/shaderToSphere.hpp"
 
 
 //USEFUL FOR ANALYZING AUDIO DATA FOR TRANSIENT ONSETS >> https://lucianpar.github.io/onset-detector/
