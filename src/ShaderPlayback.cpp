@@ -24,6 +24,9 @@
 #include "../shaderUtility/shaderToSphere.hpp"
 
 
+//PROPERLY DISTRIBUTED SHADER
+
+
 //USEFUL FOR ANALYZING AUDIO DATA FOR TRANSIENT ONSETS >> https://lucianpar.github.io/onset-detector/
 /* FOR USING THIS FILE:
 * Update file paths for audio and shaders in the USER CONFIGURATION section "SET PATHS HERE"
@@ -68,6 +71,8 @@ public:
 
 
   void onInit() override {
+
+    parameterServer() << globalTime << running;
     // Graphics initialization
     searchPaths.addSearchPath(al::File::currentPath() + ripeFolder);
 
