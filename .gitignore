@@ -4,14 +4,15 @@ build
 bin
 **/bin
 
-# Ignore AlloLib and al_ext (they're provided externally)
+debug/
+.DS_Store
+
+# Submodules
 allolib/
 al_ext/
 
-# Ignore shell init/debug scripts from kickstart
-init.sh
-debug.sh
+.vscode/
+**/.vscode/
 
-# OS and editor files
-.DS_Store
-*.swp
+.cache/
+.vscode/cache/
