@@ -122,7 +122,7 @@ vec3 renderBugSwarm(vec2 uv, vec3 colorMultiplier, float speed, float density, f
     mat2 rot = mat2(cos(ang), -sin(ang), sin(ang), cos(ang));
 
     float gy = fbmGyroid(vec3(rot * warpedUV * dynamicScale + flow, u_time*0.02));
-    float grouping = smoothstep(0.4, 0.65, gy);
+    float grouping = smoothstep(0.48, 0.52, gy);  // Even narrower range for maximum contrast
 
     float densityWave = 0.6 + 0.4*fbmGyroid(vec3(0.0,0.0,u_time*0.05));
     grouping *= densityWave * density; // apply density parameter
@@ -135,18 +135,18 @@ vec3 renderBugSwarm(vec2 uv, vec3 colorMultiplier, float speed, float density, f
 
     float bugs = smoothstep(bugSize, 0.0, bugField);
     float glow = smoothstep(bugSize*1.6, bugSize*1.2, bugField);
-    bugs += glow * 0.3;
+    bugs += glow * 0.6;  // Further increased glow contribution for maximum brightness
 
     float twinkle = 0.5 + 0.5*sin(u_time*3.0 + twinklePhase);
     bugs *= (0.7 + 0.3*twinkle);
     bugs *= grouping;
 
-    vec3 base   = vec3(0.01, 0.0, 0.05);
-    vec3 accent = vec3(0.12, 0.05, 0.3) * 1.2;
-    vec3 glowC  = vec3(0.3, 0.2, 0.65) * 3.0;
+    vec3 base   = vec3(0.002, 0.0, 0.01);  // Even darker base for maximum contrast
+    vec3 accent = vec3(0.05, 0.1, 0.3) * 1.2;  // Blue accent
+    vec3 glowC  = vec3(0.1, 0.3, 1.0) * 6.0;  // Even brighter blue glow for higher contrast
 
     vec3 bugColor = mix(base, accent, bugs);
-    bugColor = mix(bugColor, glowC, pow(bugs, 2.0));
+    bugColor = mix(bugColor, glowC, pow(bugs, 6.0));  // Higher exponent for even sharper, brighter highlights
 
     return bugColor * colorMultiplier; // apply color multiplier
 }
@@ -178,7 +178,7 @@ void main() {
    
 
     // Timeline variables
-    float swarm1Brightness = 1.0;
+    float swarm1Brightness = 2.0;
     float swarm2Brightness = 0.0;
     float speedMult = 2.0; // always normal, no speed changes
     vec3 colorMult1 = vec3(1.0); // additional color for swarm1 later
