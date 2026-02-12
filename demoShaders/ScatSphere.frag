@@ -74,14 +74,13 @@ float voronoi(vec2 uv, out float bugSize, out float twinklePhase, float sizePuls
             vec2 neighbor = vec2(x, y);
             float h = hash(i + neighbor);
 
-            vec2 point = 0.5 + 0.5 * vec2(hash(i+neighbor*1.7),
-                                      hash(i+neighbor*2.3));  // Simplified point calculation, removed expensive sin/cos
+            vec2 point = 0.5 + 0.5 * vec2(h, h);  // Simplified to use single hash for both components
 
             vec2 diff = neighbor + point - f;
             float d = length(diff);
             if (d < minDist) {
                 minDist = d;
-                chosenSize = (0.08 + 0.1 * hash(i + neighbor*3.1)) * sizePulse;
+                chosenSize = 0.1 * sizePulse;  // Simplified to remove hash call for performance
                 chosenPhase = h * TWO_PI;
             }
         }
@@ -104,17 +103,15 @@ vec3 renderBugSwarm(vec2 uv, vec3 colorMultiplier, float speed, float density, f
         fbmGyroid(vec3(warpedUV*0.02 + 50.0, u_time*0.05))
     ) * 4.0;  // Reduced amplitude for performance
 
-    float dynamicScale = 0.03 + 0.015*sin(u_time * 0.17)
-                       + 0.01*fbmGyroid(vec3(0.0,0.0,u_time*0.1));
+    float dynamicScale = 0.03 + 0.015*sin(u_time * 0.17);  // Removed fbmGyroid for performance
 
-    float ang = fbmGyroid(vec3(warpedUV*0.01, u_time*0.03)) * TWO_PI * 0.05;  // Reduced multiplier for performance
+    float ang = 0.0;  // Removed fbmGyroid call for performance, disabling rotation
     mat2 rot = mat2(cos(ang), -sin(ang), sin(ang), cos(ang));
 
     float gy = fbmGyroid(vec3(rot * warpedUV * dynamicScale + flow, u_time*0.02));
     float grouping = smoothstep(0.4, 0.65, gy);
 
-    float densityWave = 0.6 + 0.4*fbmGyroid(vec3(0.0,0.0,u_time*0.05));
-    grouping *= densityWave * density; // apply density parameter
+    grouping *= density;  // Simplified densityWave to 1.0 for performance
 
     float sizePulse = 0.9 + 0.2*sin(u_time * 2.0);
     float bugSize, twinklePhase;
@@ -135,7 +132,7 @@ vec3 renderBugSwarm(vec2 uv, vec3 colorMultiplier, float speed, float density, f
     vec3 glowC  = vec3(0.3, 0.2, 0.65) * 3.0;
 
     vec3 bugColor = mix(base, accent, bugs);
-    bugColor = mix(bugColor, glowC, pow(bugs, 2.0));
+    bugColor = mix(bugColor, glowC, bugs * bugs);  // Replaced pow(bugs, 2.0) with bugs*bugs for performance
 
     return bugColor * colorMultiplier; // apply color multiplier
 }
