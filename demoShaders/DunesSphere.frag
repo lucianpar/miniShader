@@ -243,7 +243,7 @@ void main() {
     // --- No pulsing ---
 
     // scale uv: smaller growthFactor → smaller object
-    vec2 uv = (vPos.xy / 6.0) / growthFactor;
+    vec2 uv = (vPos.xy /3.0) / growthFactor;  // Zoomed in by 2.0x. changed v pos division from 6.0 to 3.0
     float r = length(uv);
 
     // === Sun body mask ===
