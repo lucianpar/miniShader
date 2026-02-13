@@ -222,20 +222,24 @@ void main() {
         float fadeIn = smoothstep(49.0, 52.0, t);
         float fadeOut = smoothstep(66.0, 63.0, t);
         tendrilDensity = 0.6 * fadeIn * fadeOut;
+        blueGlow = true;
     }
     if (t >= 93.0 && t <= 112.0) {
         float fadeIn = smoothstep(93.0, 96.0, t);
         float fadeOut = smoothstep(112.0, 109.0, t);
         tendrilDensity = 0.3 * fadeIn * fadeOut;
+        blueGlow = true;
     }
     if (t >= 143.0 && t <= 173.0) {
         float fadeIn = smoothstep(143.0, 146.0, t);
         float fadeOut = smoothstep(173.0, 170.0, t);
         tendrilDensity = 0.6 * fadeIn * fadeOut;
+        blueGlow = true;
     }
-    if (t >= 173.0 && t <= 400.0) {
+    if (t >= 173.0) {  // Changed: No upper bound, and no fade-out
         isParticles = true;
-        tendrilDensity = 1.0 - (t - 173.0) / (400.0 - 173.0);
+        tendrilDensity = 1.0;  // Constant full density
+        blueGlow = true;    
     }
 
     // No more orb opacity phases, always visible
