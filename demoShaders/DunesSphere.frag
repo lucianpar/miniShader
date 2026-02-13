@@ -7,7 +7,7 @@ out vec4 fragColor;
 
 uniform float u_time;
 
-const float TRACK_LENGTH = 255.0;  // updated to 255 seconds
+// const float TRACK_LENGTH = 255.0;  // updated to 255 seconds
 
 // === Noise functions for sandy effect ===
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
@@ -243,7 +243,7 @@ void main() {
     // --- No pulsing ---
 
     // scale uv: smaller growthFactor → smaller object
-    vec2 uv = (vPos.xy /3.0) / growthFactor;  // Zoomed in by 2.0x. changed v pos division from 6.0 to 3.0
+    vec2 uv = (vPos.xy / 10.0 ) / growthFactor;  // Zoomed in by 2.0x. changed v pos division from 6.0 to 3.0
     float r = length(uv);
 
     // === Sun body mask ===
