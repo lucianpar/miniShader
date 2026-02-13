@@ -180,7 +180,7 @@ void main() {
 
     // Timeline logic
     float orbOpacity = 1.0; // always visible
-    float growthFactor = mix(0.001, 2.0, t / 255.0); // start super tiny, slow growth over entire track
+    float growthFactor = mix(0.01, 0.8, t / 60.0); // start super tiny, slow growth over entire track
     float sandIntensity = 0.0;
     float tendrilDensity = 0.0;
     bool isParticles = false;
@@ -233,9 +233,9 @@ void main() {
         float fadeOut = smoothstep(173.0, 170.0, t);
         tendrilDensity = 0.6 * fadeIn * fadeOut;
     }
-    if (t >= 173.0 && t <= 255.0) {
+    if (t >= 173.0 && t <= 400.0) {
         isParticles = true;
-        tendrilDensity = 1.0 - (t - 173.0) / (255.0 - 173.0);
+        tendrilDensity = 1.0 - (t - 173.0) / (400.0 - 173.0);
     }
 
     // No more orb opacity phases, always visible
@@ -243,7 +243,7 @@ void main() {
     // --- No pulsing ---
 
     // scale uv: smaller growthFactor → smaller object
-    vec2 uv = (vPos.xy / 10.0 ) / growthFactor;  // Zoomed in by 2.0x. changed v pos division from 6.0 to 3.0
+    vec2 uv = (vPos.xy / 10.0 ) / growthFactor;  // the larger the divisor the more zoom
     float r = length(uv);
 
     // === Sun body mask ===
