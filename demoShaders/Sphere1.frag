@@ -331,11 +331,10 @@ vec3 renderBugSwarms(vec2 uv, float thickness1, float thickness2, float speedMul
 // ---------------------
 // Main
 // ---------------------
-float transitionTime = 10.0; //update to 150
+float transitionTime = 150.0; //update to 150
 void main() {
     //BUGS CODE
-     float t = u_time;
-   
+    float t = u_time;
 
     // Timeline variables
     float swarm1Brightness = 0.8;
@@ -346,72 +345,62 @@ void main() {
     float fadeToBlack = 1.0;
     float density1 = 2.0; // density for swarm1
 
-
     // base uv for the bug-field (higher frequency space)
     vec2 uv = vPos.xy * 2.0 * zoom; // apply zoom
 
     // Animate thickness parameters, start slightly less thick, full at 1:40 (100s), then decrease
     float thickness1 = mix(0.01, 3.0, t / 500.0); // start at 0.5
-    // if (t > 100.0) thickness1 *= (204.0 - t) / 104.0;
     float thickness2 = 1.5 + t * 0.01; // faster increase
 
     vec3 warpScene = vec3(0.0);
+    vec3 sunScene = vec3(0.0);
 
-    warpScene += renderBugSwarms(uv, thickness1, thickness2, speedMult, colorMult1, density1) * swarm1Brightness;
+    if (u_time > transitionTime || u_time <= transitionTime) {
+        if (u_time > transitionTime) {
+            // Render Sun Scene
+            float orbOpacity = 1.0; // always visible
+            float growthFactor = mix(0.6, 1.0, (t-transitionTime) / 60.0); // start super tiny, slow growth over entire track
+            float sandIntensity = 0.0;
+            float tendrilDensity = 0.0;
+            bool isParticles = false;
+            bool blueGlow = true; // flag for blueish glow in center
 
-    // // Render swarms based on brightness
-  
-    
-    // if (swarm2Brightness > 0.0) {
-    //     // Unique thin green-white swarm for swarm2
-    //     finalColor += renderBugSwarm(uv, vec3(0.3, 1.0, 0.1) + 0.2, 0.4 * speedMult, 0.8, 2.9) * swarm2Brightness;
-    //     // Removed circular masking for simpler ending
-    // }
+            // scale uv: smaller growthFactor → smaller object
+            vec2 SUNuv = (vPos.xy / 10.0) / growthFactor;  // the larger the divisor the more zoom
+            float r = length(SUNuv);
 
-    warpScene *= fadeToBlack;
+            // === Sun body mask ===
+            float sunRadius = 1.0;
+            float body = smoothstep(sunRadius, 0.0, r);
 
-    //end of scene 1 code 
+            // === Chaos factor increases over the track ===
+            float chaosFactor = 1.0; // always max for now
 
+            // === Modular rendering ===
+            vec3 sunBase = renderSunBase(SUNuv, r, body, chaosFactor, blueGlow);
+            vec3 sunWithSand = renderSand(SUNuv, r, body, sunBase, sandIntensity);
+            vec3 finalSun = renderSunEffects(SUNuv, r, sunWithSand, chaosFactor);
 
-    //start of scene 2 code 
+            // === Add Tendril Cloud over top ===
+            vec3 tendrilCloud = renderTendrilCloud(SUNuv, r, chaosFactor, tendrilDensity, isParticles);
 
+            // === Combine ===
+            sunScene = finalSun + tendrilCloud;
 
-     // Timeline logic
-    float orbOpacity = 1.0; // always visible
-    float growthFactor = mix(0.01, 0.8, t / 60.0); // start super tiny, slow growth over entire track
-    float sandIntensity = 0.0;
-    float tendrilDensity = 0.0;
-    bool isParticles = false;
-    bool blueGlow = true; // flag for blueish glow in center
+            // keep background black
+            sunScene *= smoothstep(1.5, 0.9, r);
+        }
 
-    // scale uv: smaller growthFactor → smaller object
-    vec2 SUNuv = (vPos.xy / 10.0 ) / growthFactor;  // the larger the divisor the more zoom
-    float r = length(SUNuv);
+        if (u_time <= transitionTime) {
+            // Render Warp Scene
+            warpScene += renderBugSwarms(uv, thickness1, thickness2, speedMult, colorMult1, density1) * swarm1Brightness;
+            warpScene *= fadeToBlack;
 
-    // === Sun body mask ===
-    float sunRadius = 1.0;
-    float body = smoothstep(sunRadius, 0.0, r);
-
-    // === Chaos factor increases over the track ===
-    float chaosFactor = 1.0; // always max for now
-
-    // === Modular rendering ===
-    vec3 sunBase = renderSunBase(SUNuv, r, body, chaosFactor, blueGlow);
-    vec3 sunWithSand = renderSand(SUNuv, r, body, sunBase, sandIntensity);
-    vec3 finalSun = renderSunEffects(SUNuv, r, sunWithSand, chaosFactor);
-    
-    // === Add Tendril Cloud over top ===
-    vec3 tendrilCloud = renderTendrilCloud(SUNuv, r, chaosFactor, tendrilDensity, isParticles);
-
-    // === Combine ===
-    vec3 sunScene = finalSun + tendrilCloud;
-
-    // keep background black
-    sunScene *= smoothstep(1.5, 0.9, r);
-    if (u_time <= transitionTime) {
-        float mixFactor = smoothstep(transitionTime - 5.0, transitionTime, u_time);
-        fragColor = vec4(mix(warpScene + 0.01, sunScene, mixFactor), 1.0);
-    } else if (u_time > transitionTime && u_time <= 70) {
-        fragColor = vec4(sunScene, 1.0);
+            // Transition logic
+            float mixFactor = smoothstep(transitionTime - 5.0, transitionTime, u_time);
+            fragColor = vec4(mix(warpScene + 0.01, sunScene, mixFactor), 1.0);
+        } else if (u_time > transitionTime) {
+            fragColor = vec4(sunScene, 1.0);
+        }
     }
 }
