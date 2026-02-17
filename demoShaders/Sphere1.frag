@@ -276,10 +276,10 @@ vec3 renderBugSwarm(vec2 uv, vec3 colorMultiplier, float speed, float density, f
 
     float dynamicScale = 0.03 + 0.015*sin(u_time * 0.17);  // Removed fbmGyroid for performance
 
-    float ang = 0.0;  // Removed fbmGyroid call for performance, disabling rotation
-    mat2 rot = mat2(cos(ang), -sin(ang), sin(ang), cos(ang));
+    // float ang = 0.0;  // Removed fbmGyroid call for performance, disabling rotation
+    // mat2 rot = mat2(cos(ang), -sin(ang), sin(ang), cos(ang));
 
-    float gy = fbmGyroid(vec3(rot * warpedUV * dynamicScale + flow, u_time*0.02));
+    float gy = fbmGyroid(vec3(warpedUV * dynamicScale + flow, u_time*0.02));
     float grouping = smoothstep(0.4, 0.65, gy);
 
     grouping *= density;  // Simplified densityWave to 1.0 for performance
@@ -295,12 +295,12 @@ vec3 renderBugSwarm(vec2 uv, vec3 colorMultiplier, float speed, float density, f
     bugs += glow * 0.3;
 
     float twinkle = 0.5 + 0.5*sin(u_time*3.0 + twinklePhase);
-    bugs *= (0.7 + 0.3*twinkle);
+    bugs *= (0.7 + 0.2*twinkle);
     bugs *= grouping;
 
     vec3 base   = vec3(0.01, 0.0, 0.05);
-    vec3 accent = vec3(0.12, 0.05, 0.3) * 4.2;
-    vec3 glowC  = vec3(0.3, 0.2, 0.65) * 10.0;
+    vec3 accent = vec3(0.12, 0.05, 0.3) * 8.2;
+    vec3 glowC  = vec3(0.3, 0.2, 0.65) * 20.0;
 
     vec3 bugColor = mix(base, accent, bugs);
     bugColor = mix(bugColor, glowC, bugs * bugs);  // Replaced pow(bugs, 2.0) with bugs*bugs for performance
@@ -356,10 +356,11 @@ void main() {
 
     vec3 warpScene = vec3(0.0);
 
+    warpScene += renderBugSwarms(uv, thickness1, thickness2, speedMult, colorMult1, density1) * swarm1Brightness;
+
     // // Render swarms based on brightness
-    if (swarm1Brightness > 0.0) {
-        warpScene += renderBugSwarms(uv, thickness1, thickness2, speedMult, colorMult1, density1) * swarm1Brightness;
-    }
+  
+    
     // if (swarm2Brightness > 0.0) {
     //     // Unique thin green-white swarm for swarm2
     //     finalColor += renderBugSwarm(uv, vec3(0.3, 1.0, 0.1) + 0.2, 0.4 * speedMult, 0.8, 2.9) * swarm2Brightness;
